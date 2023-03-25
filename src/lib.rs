@@ -34,10 +34,10 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<GameState>()
-            .add_plugin(LoadingPlugin)
-            .add_plugin(MenuPlugin)
-            .add_plugin(ActionsPlugin)
-            .add_plugin(InternalAudioPlugin)
+            // .add_plugin(LoadingPlugin)
+            // .add_plugin(MenuPlugin)
+            // .add_plugin(ActionsPlugin)
+            // .add_plugin(InternalAudioPlugin)
             .add_plugin(PlayerPlugin);
 
         #[cfg(debug_assertions)]

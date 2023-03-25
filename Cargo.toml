@@ -1,3 +1,4 @@
+# [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "bevy_game" # ToDo
 version = "0.1.0"
@@ -54,6 +55,11 @@ bevy = { version = "0.10", default-features = false }
 bevy_kira_audio = { version = "0.15" }
 bevy_asset_loader = { version = "0.15" }
 rand = { version = "0.8.3" }
+bevy-inspector-egui = "0.18.0"
+bevy_mod_picking = "0.12.0"
+bevy_mod_raycast = "0.8.0"
+bevy_egui = "0.20"
+smooth-bevy-cameras = "0.8.0"
 
 # keep the following in sync with Bevy's dependencies
 winit = { version = "0.28", default-features = false }
@@ -61,3 +67,6 @@ image = { version = "0.24", default-features = false }
 
 [build-dependencies]
 embed-resource = "1.4"
+
+[workspace]
+# e345323a ends here

@@ -6,37 +6,32 @@ use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
 use bevy::DefaultPlugins;
 use bevy_game::GamePlugin;
+use bevy_mod_picking::DefaultPickingPlugins;
 use std::io::Cursor;
 use winit::window::Icon;
 
 fn main() {
+    use bevy_egui::EguiPlugin;
+    use bevy_inspector_egui::prelude::*;
+    use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
     App::new()
-        .insert_resource(Msaa::Off)
-        .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Bevy game".to_string(), // ToDo
-                resolution: (800., 600.).into(),
-                canvas: Some("#bevy".to_owned()),
-                ..default()
-            }),
-            ..default()
-        }))
+        .add_plugins(DefaultPlugins)
+        .add_plugin(EguiPlugin)
+        .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugins(DefaultPickingPlugins)
+        // .insert_resource(Msaa::Off)
+        // .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
         .add_plugin(GamePlugin)
         .add_system(set_window_icon.on_startup())
         .run();
 }
 
 // Sets the icon on windows and X11
-fn set_window_icon(
-    windows: NonSend<WinitWindows>,
-    primary_window: Query<Entity, With<PrimaryWindow>>,
-) {
+fn set_window_icon(windows: NonSend<WinitWindows>, primary_window: Query<Entity, With<PrimaryWindow>>) {
     let primary_entity = primary_window.single();
     let primary = windows.get_window(primary_entity).unwrap();
-    let icon_buf = Cursor::new(include_bytes!(
-        "../build/macos/AppIcon.iconset/icon_256x256.png"
-    ));
+    let icon_buf = Cursor::new(include_bytes!("../build/macos/AppIcon.iconset/icon_256x256.png"));
     if let Ok(image) = image::load(icon_buf, image::ImageFormat::Png) {
         let image = image.into_rgba8();
         let (width, height) = image.dimensions();
