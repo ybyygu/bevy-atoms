@@ -1,9 +1,19 @@
+// [[file:../bevy.note::*src/lib.rs][src/lib.rs:1]]
+// #![deny(warnings)]
+// #![deny(clippy::all)]
+// src/lib.rs:1 ends here
+
+// [[file:../bevy.note::3edfd207][3edfd207]]
 mod actions;
 mod audio;
 mod loading;
 mod menu;
 mod player;
 
+mod molecule;
+// 3edfd207 ends here
+
+// [[file:../bevy.note::043e6795][043e6795]]
 use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
 use crate::loading::LoadingPlugin;
@@ -14,7 +24,9 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+// 043e6795 ends here
 
+// [[file:../bevy.note::398b4a02][398b4a02]]
 // This example game uses States to separate logic
 // See https://bevy-cheatbook.github.io/programming/states.html
 // Or https://github.com/bevyengine/bevy/blob/main/examples/ecs/state.rs
@@ -47,3 +59,4 @@ impl Plugin for GamePlugin {
         }
     }
 }
+// 398b4a02 ends here

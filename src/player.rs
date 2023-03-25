@@ -7,9 +7,6 @@ use smooth_bevy_cameras::{
 
 pub struct PlayerPlugin;
 
-#[derive(Component)]
-pub struct Player;
-
 /// This plugin handles player related stuff like movement
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -20,16 +17,6 @@ impl Plugin for PlayerPlugin {
 }
 
 fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
-    // plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane {
-            size: 5.0,
-            subdivisions: 4,
-        })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..Default::default()
-    });
-
     // atom
     commands
         .spawn(PbrBundle {
@@ -38,16 +25,20 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..default()
         })
-        .insert(Player)
+        .insert(crate::molecule::Atom)
+        .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)))
         .insert(PickableBundle::default());
 
     // bond
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cylinder::default())),
-        material: materials.add(Color::BLUE.into()),
-        transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
-        ..default()
-    });
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cylinder::default())),
+            material: materials.add(Color::BLUE.into()),
+            transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
+            ..default()
+        })
+        .insert(crate::molecule::Bond)
+        .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)));
 
     // light
     commands.spawn(PointLightBundle {
