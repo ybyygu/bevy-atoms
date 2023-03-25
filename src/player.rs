@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use smooth_bevy_cameras::{
     controllers::orbit::{OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin},
     LookTransformPlugin,
@@ -37,7 +38,8 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..default()
         })
-        .insert(Player);
+        .insert(Player)
+        .insert(PickableBundle::default());
 
     // bond
     commands.spawn(PbrBundle {
@@ -54,14 +56,17 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
     });
 
     // 缩放平移旋转控制 (中键: 缩放, Ctrl-Left: 旋转, Right: 平移)
-    commands.spawn(Camera3dBundle::default()).insert(OrbitCameraBundle::new(
-        OrbitCameraController {
-            mouse_wheel_zoom_sensitivity: 0.005,
-            smoothing_weight: 0.02,
-            ..Default::default()
-        },
-        Vec3::new(-2.0, 5.0, 5.0),
-        Vec3::new(0., 0., 0.),
-        Vec3::Y,
-    ));
+    commands
+        .spawn(Camera3dBundle::default())
+        .insert(OrbitCameraBundle::new(
+            OrbitCameraController {
+                mouse_wheel_zoom_sensitivity: 0.005,
+                smoothing_weight: 0.02,
+                ..Default::default()
+            },
+            Vec3::new(-2.0, 5.0, 5.0),
+            Vec3::new(0., 0., 0.),
+            Vec3::Y,
+        ))
+        .insert(PickingCameraBundle::default());
 }

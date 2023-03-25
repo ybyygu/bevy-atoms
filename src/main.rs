@@ -19,7 +19,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .add_plugin(WorldInspectorPlugin::new())
-        // .add_plugins(DefaultPickingPlugins)
+        .add_plugins(DefaultPickingPlugins)
         // .insert_resource(Msaa::Off)
         // .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
         .add_plugin(GamePlugin)
