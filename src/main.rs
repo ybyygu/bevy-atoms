@@ -9,6 +9,7 @@ use bevy_game::GamePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use std::io::Cursor;
 use winit::window::Icon;
+mod molecule;
 
 fn main() {
     use bevy_egui::EguiPlugin;
@@ -20,9 +21,10 @@ fn main() {
         .add_plugin(EguiPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugins(DefaultPickingPlugins)
+        .add_plugin(molecule::MoleculePlugin)
+        // .add_plugin(GamePlugin)
         // .insert_resource(Msaa::Off)
         // .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-        .add_plugin(GamePlugin)
         .add_system(set_window_icon.on_startup())
         .run();
 }

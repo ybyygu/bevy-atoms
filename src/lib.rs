@@ -10,7 +10,7 @@ mod loading;
 mod menu;
 mod player;
 
-mod molecule;
+// mod molecule;
 // 3edfd207 ends here
 
 // [[file:../bevy.note::043e6795][043e6795]]

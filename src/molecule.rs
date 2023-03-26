@@ -4,10 +4,33 @@ use bevy::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 // a83ae206 ends here
 
+// [[file:../bevy.note::92de9269][92de9269]]
+use smooth_bevy_cameras::{
+    controllers::orbit::{OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin},
+    LookTransformPlugin,
+};
+
+pub struct MoleculePlugin;
+
+impl Plugin for MoleculePlugin {
+    fn build(&self, app: &mut App) {
+        app
+            // .init_resource::<Molecule>()
+            .add_startup_system(spawn_molecule)
+            .add_plugin(LookTransformPlugin)
+            .add_plugin(OrbitCameraPlugin::default());
+    }
+}
+// 92de9269 ends here
+
 // [[file:../bevy.note::031857dd][031857dd]]
-#[derive(Clone, Copy, Debug, Component)]
+#[derive(Clone, Debug, Component)]
 pub struct Atom {
     element: usize,
+    symbol: String,
+    label: String,
+    color: Color,
+    radius: f32,
 }
 
 #[derive(Clone, Copy, Debug, Component)]
@@ -20,32 +43,68 @@ pub struct Position(Vec3);
 /// 定义原子或化学键的编号
 #[derive(Clone, Copy, Debug, Component)]
 pub struct Index(pub u64);
-
-#[derive(Clone, Debug, Component)]
-pub struct Molecule {
-    atoms: Vec<Atom>,
-    bonds: Vec<Bond>,
-}
 // 031857dd ends here
 
-// [[file:../bevy.note::deffe145][deffe145]]
-/// Move atoms according to their positions
-pub fn move_atoms(mut query: Query<(&Position, &mut Transform)>) {
-    for (position, mut transform) in &mut query {
-        transform.translation = position.0;
-    }
+// [[file:../bevy.note::c068ff9c][c068ff9c]]
+#[derive(Resource)]
+pub struct Molecule {
+    inner: gchemol_core::Molecule,
 }
 
-pub fn setup_atoms(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+impl Default for Molecule {
+    fn default() -> Self {
+        let mut inner = gchemol_core::Molecule::from_database("CH4");
+        inner.rebond();
+        Self { inner }
+    }
+}
+// c068ff9c ends here
+
+// [[file:../bevy.note::deffe145][deffe145]]
+pub fn spawn_molecule(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mol_query: Res<Molecule>,
+) {
+    let mut mol = gchemol_core::Molecule::from_database("CH4");
+    // wasm 不能运行
+    // mol.rebond();
+    for (i, a) in mol.atoms() {
+        let [x, y, z] = a.position();
+        let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
+        commands
+            .spawn(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::UVSphere {
+                    radius,
+                    ..Default::default()
+                })),
+                material: materials.add(Color::RED.into()),
+                transform: Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32)),
+                ..default()
+            })
+            .insert(PickableBundle::default());
+    }
+
+    // light
+    commands.spawn(PointLightBundle {
+        transform: Transform::from_xyz(3.0, 8.0, 5.0),
+        ..default()
+    });
+
+    // 缩放平移旋转控制 (中键: 缩放, Ctrl-Left: 旋转, Right: 平移)
     commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::UVSphere::default())),
-            material: materials.add(Color::RED.into()),
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
-            ..default()
-        })
-        // .insert(Atom)
-        .insert(Position(Vec3::new(0.0, 0.0, 4.0)))
-        .insert(PickableBundle::default());
+        .spawn(Camera3dBundle::default())
+        .insert(OrbitCameraBundle::new(
+            OrbitCameraController {
+                mouse_wheel_zoom_sensitivity: 0.005,
+                smoothing_weight: 0.02,
+                ..Default::default()
+            },
+            Vec3::new(-2.0, 5.0, 5.0),
+            Vec3::new(0., 0., 0.),
+            Vec3::Y,
+        ))
+        .insert(PickingCameraBundle::default());
 }
 // deffe145 ends here
