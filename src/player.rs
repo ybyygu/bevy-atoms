@@ -25,8 +25,8 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..default()
         })
-        .insert(crate::molecule::Atom)
-        .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)))
+        // .insert(crate::molecule::Atom)
+        // .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)))
         .insert(PickableBundle::default());
 
     // bond
@@ -36,9 +36,9 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
             material: materials.add(Color::BLUE.into()),
             transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
             ..default()
-        })
-        .insert(crate::molecule::Bond)
-        .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)));
+        });
+        // .insert(crate::molecule::Bond)
+        // .insert(crate::molecule::Position(Vec3::new(0.0, 0.0, 4.0)));
 
     // light
     commands.spawn(PointLightBundle {

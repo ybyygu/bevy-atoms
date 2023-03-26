@@ -4,3 +4,4 @@ target/
 
 dist/
 Cargo.lock
+/bevy.note
