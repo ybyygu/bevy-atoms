@@ -68,8 +68,7 @@ pub fn spawn_molecule(
     // mol_query: Res<Molecule>,
 ) {
     let mut mol = gchemol_core::Molecule::from_database("CH4");
-    // wasm 不能运行
-    // mol.rebond();
+    mol.rebond();
     for (i, a) in mol.atoms() {
         let [x, y, z] = a.position();
         let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
@@ -84,6 +83,28 @@ pub fn spawn_molecule(
                 ..default()
             })
             .insert(PickableBundle::default());
+    }
+    // add chemical bonds
+    for (i, j, b) in mol.bonds() {
+        let ai = mol.get_atom_unchecked(i);
+        let aj = mol.get_atom_unchecked(j);
+        let pi: Vec3 = ai.position().map(|v| v as f32).into();
+        let pj: Vec3 = aj.position().map(|v| v as f32).into();
+        let center = (pi + pj) / 2.0;
+        let dij = pj - pi;
+        let lij = dij.length();
+        let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
+        let transform = Transform::from_translation(center).with_rotation(rot);
+        commands.spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cylinder {
+                radius: 0.07,
+                height: lij,
+                ..default()
+            })),
+            material: materials.add(Color::BLUE.into()),
+            transform,
+            ..default()
+        });
     }
 
     // light

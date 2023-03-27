@@ -61,6 +61,8 @@ smooth-bevy-cameras = "0.8.0"
 gut = { version = "0.4.3", package = "gchemol-gut" }
 gchemol-core = { version="0.1.4", features=["adhoc"] }
 # text_parser = { version = "0.4.5", package = "gchemol-parser" }
+# wasm build panic issue: https://bevy-cheatbook.github.io/platforms/wasm/panic-console.html
+console_error_panic_hook = "0.1"
 
 # keep the following in sync with Bevy's dependencies
 winit = { version = "0.28", default-features = false }
@@ -73,4 +75,5 @@ embed-resource = "1.4"
 
 [patch.crates-io]
 gchemol-gut = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gut" }
+gchemol-core = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-core" }
 # e345323a ends here
