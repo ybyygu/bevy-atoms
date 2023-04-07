@@ -9,18 +9,6 @@ use smooth_bevy_cameras::{
     controllers::orbit::{OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin},
     LookTransformPlugin,
 };
-
-pub struct MoleculePlugin;
-
-impl Plugin for MoleculePlugin {
-    fn build(&self, app: &mut App) {
-        app
-            // .init_resource::<Molecule>()
-            .add_startup_system(spawn_molecule)
-            .add_plugin(LookTransformPlugin)
-            .add_plugin(OrbitCameraPlugin::default());
-    }
-}
 // 92de9269 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
@@ -46,7 +34,7 @@ pub struct Index(pub u64);
 // 031857dd ends here
 
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
-#[derive(Resource)]
+#[derive(Resource, Clone, Debug)]
 pub struct Molecule {
     inner: gchemol_core::Molecule,
 }
@@ -65,10 +53,9 @@ pub fn spawn_molecule(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    // mol_query: Res<Molecule>,
+    mol: Res<Molecule>,
 ) {
-    let mut mol = gchemol_core::Molecule::from_database("CH4");
-    mol.rebond();
+    let mol = &mol.inner;
     for (i, a) in mol.atoms() {
         let [x, y, z] = a.position();
         let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
@@ -118,8 +105,8 @@ pub fn spawn_molecule(
         .spawn(Camera3dBundle::default())
         .insert(OrbitCameraBundle::new(
             OrbitCameraController {
-                mouse_wheel_zoom_sensitivity: 0.005,
-                smoothing_weight: 0.02,
+                mouse_wheel_zoom_sensitivity: 0.01,
+                smoothing_weight: 0.08,
                 ..Default::default()
             },
             Vec3::new(-2.0, 5.0, 5.0),
@@ -129,3 +116,25 @@ pub fn spawn_molecule(
         .insert(PickingCameraBundle::default());
 }
 // deffe145 ends here
+
+// [[file:../bevy.note::8ec82258][8ec82258]]
+#[derive(Debug, Clone)]
+pub struct MoleculePlugin {
+    mol: Molecule,
+}
+
+impl MoleculePlugin {
+    pub fn from_mol(inner: gchemol_core::Molecule) -> Self {
+        Self { mol: Molecule { inner } }
+    }
+}
+
+impl Plugin for MoleculePlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(self.mol.clone())
+            .add_startup_system(spawn_molecule)
+            .add_plugin(LookTransformPlugin)
+            .add_plugin(OrbitCameraPlugin::default());
+    }
+}
+// 8ec82258 ends here

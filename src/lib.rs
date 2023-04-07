@@ -9,8 +9,10 @@ mod audio;
 mod loading;
 mod menu;
 mod player;
+mod molecule;
 
-// mod molecule;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod cli;
 // 3edfd207 ends here
 
 // [[file:../bevy.note::043e6795][043e6795]]

@@ -1,3 +1,4 @@
+// [[file:../bevy.note::1ba2a38a][1ba2a38a]]
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -5,44 +6,37 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
 use bevy::DefaultPlugins;
+use bevy_egui::EguiPlugin;
 use bevy_game::GamePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use std::io::Cursor;
 use winit::window::Icon;
 mod molecule;
 
+// when compiling to web using trunk.
+#[cfg(target_arch = "wasm32")]
 fn main() {
-    use bevy_egui::EguiPlugin;
     use bevy_inspector_egui::prelude::*;
     use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
     // When building for WASM, print panics to the browser console
-    #[cfg(target_arch = "wasm32")]
     console_error_panic_hook::set_once();
 
+    let mut mol = gchemol_core::Molecule::from_database("CH4");
+    mol.rebond();
+    let mol_plugin = molecule::MoleculePlugin::from_mol(mol);
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
-        .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugin(WorldInspectorPlugin::new())
         .add_plugins(DefaultPickingPlugins)
-        .add_plugin(molecule::MoleculePlugin)
-        // .add_plugin(GamePlugin)
-        // .insert_resource(Msaa::Off)
-        // .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-        .add_system(set_window_icon.on_startup())
+        .add_plugin(mol_plugin)
         .run();
 }
 
-// Sets the icon on windows and X11
-fn set_window_icon(windows: NonSend<WinitWindows>, primary_window: Query<Entity, With<PrimaryWindow>>) {
-    let primary_entity = primary_window.single();
-    let primary = windows.get_window(primary_entity).unwrap();
-    let icon_buf = Cursor::new(include_bytes!("../build/macos/AppIcon.iconset/icon_256x256.png"));
-    if let Ok(image) = image::load(icon_buf, image::ImageFormat::Png) {
-        let image = image.into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        let icon = Icon::from_rgba(rgba, width, height).unwrap();
-        primary.set_window_icon(Some(icon));
-    };
+// When compiling natively:
+#[cfg(not(target_arch = "wasm32"))]
+fn main() {
+    let _ = bevy_game::cli::ViewerCli::enter_main();
 }
+// 1ba2a38a ends here

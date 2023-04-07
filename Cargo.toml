@@ -68,6 +68,11 @@ console_error_panic_hook = "0.1"
 winit = { version = "0.28", default-features = false }
 image = { version = "0.24", default-features = false }
 
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+clap = { version = "4", features = ["derive"] }
+gchemol = { version = "0.1.3", features=["adhoc"] }
+
 [build-dependencies]
 embed-resource = "1.4"
 
