@@ -254,9 +254,25 @@ pub fn spawn_molecule(
     }
 
     // light
+    // ambient light
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 0.2,
+    });
+    let trans = Transform::from_xyz(5., 5., 5.);
     commands.spawn(PointLightBundle {
-        transform: Transform::from_xyz(3.0, 8.0, 5.0),
-        ..default()
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(5., -5., -5.);
+    commands.spawn(PointLightBundle {
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(-5., -5., -5.);
+    commands.spawn(SpotLightBundle {
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
     });
 
     // mouse: zoom, rotate and translate
