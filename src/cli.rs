@@ -9,6 +9,7 @@ use gchemol::prelude::*;
 use gchemol::Molecule;
 
 use bevy::prelude::*;
+use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
@@ -36,9 +37,15 @@ impl ViewerCli {
         let mol_plugin = crate::molecule::MoleculePlugin::from_mol(mol);
 
         App::new()
-            .add_plugins(DefaultPlugins)
+            // .add_plugins(DefaultPlugins)
+            .add_plugins(DefaultPlugins.set(WindowPlugin {
+                exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+                ..default()
+            }))
             .add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
+            // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
+            .insert_resource(WinitSettings::desktop_app())
             .add_plugin(mol_plugin)
             .run();
 
