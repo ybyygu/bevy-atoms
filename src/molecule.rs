@@ -6,12 +6,9 @@ use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
-// [[file:../bevy.note::92de9269][92de9269]]
-use smooth_bevy_cameras::{
-    controllers::orbit::{OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin},
-    LookTransformPlugin,
-};
-// 92de9269 ends here
+// [[file:../bevy.note::711fbcb5][711fbcb5]]
+use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
+// 711fbcb5 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
 #[derive(Clone, Debug, Component)]
@@ -88,7 +85,7 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines) {
 }
 // bb92e200 ends here
 
-// [[file:../bevy.note::deffe145][deffe145]]
+// [[file:../bevy.note::45281d24][45281d24]]
 fn get_color(atom: &gchemol_core::Atom) -> Color {
     match atom.symbol() {
         "H" => Color::rgb_u8(255, 255, 255),
@@ -203,7 +200,9 @@ fn get_color(atom: &gchemol_core::Atom) -> Color {
         _ => Color::RED,
     }
 }
+// 45281d24 ends here
 
+// [[file:../bevy.note::deffe145][deffe145]]
 pub fn spawn_molecule(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -260,19 +259,10 @@ pub fn spawn_molecule(
         ..default()
     });
 
-    // 缩放平移旋转控制 (中键: 缩放, Ctrl-Left: 旋转, Right: 平移)
+    // mouse: zoom, rotate and translate
     commands
         .spawn(Camera3dBundle::default())
-        .insert(OrbitCameraBundle::new(
-            OrbitCameraController {
-                mouse_wheel_zoom_sensitivity: 0.01,
-                smoothing_weight: 0.08,
-                ..Default::default()
-            },
-            Vec3::new(-2.0, 5.0, 5.0),
-            Vec3::new(0., 0., 0.),
-            Vec3::Y,
-        ))
+        .insert(PanOrbitCamera::default())
         .insert(PickingCameraBundle::default());
 }
 // deffe145 ends here
@@ -293,9 +283,8 @@ impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.mol.clone())
             .add_startup_system(spawn_molecule)
-            .add_plugin(LookTransformPlugin)
             .add_plugin(DebugLinesPlugin::default())
-            .add_plugin(OrbitCameraPlugin::default());
+            .add_plugin(PanOrbitCameraPlugin);
     }
 }
 // 8ec82258 ends here
