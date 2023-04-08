@@ -2,6 +2,8 @@
 use bevy::prelude::*;
 
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
+// for lattice
+use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
 // [[file:../bevy.note::92de9269][92de9269]]
@@ -47,6 +49,44 @@ impl Default for Molecule {
     }
 }
 // c068ff9c ends here
+
+// [[file:../bevy.note::bb92e200][bb92e200]]
+fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
+    let p = p.into();
+    Vec3::new(p[0] as f32, p[1] as f32, p[2] as f32)
+}
+
+fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines) {
+    let p0 = lat.to_cart([0.0, 0.0, 0.0]);
+    let p1 = lat.to_cart([1.0, 0.0, 0.0]);
+    let p2 = lat.to_cart([0.0, 1.0, 0.0]);
+    let p3 = lat.to_cart([0.0, 0.0, 1.0]);
+    let p4 = lat.to_cart([1.0, 1.0, 0.0]);
+    let p5 = lat.to_cart([1.0, 0.0, 1.0]);
+    let p6 = lat.to_cart([0.0, 1.0, 1.0]);
+    let p7 = lat.to_cart([1.0, 1.0, 1.0]);
+    let p0 = as_vec3(p0);
+    let p1 = as_vec3(p1);
+    let p2 = as_vec3(p2);
+    let p3 = as_vec3(p3);
+    let p4 = as_vec3(p4);
+    let p5 = as_vec3(p5);
+    let p6 = as_vec3(p6);
+    let p7 = as_vec3(p7);
+    lines.line_colored(p0, p1, f32::MAX, Color::RED);
+    lines.line_colored(p0, p2, f32::MAX, Color::YELLOW);
+    lines.line_colored(p0, p3, f32::MAX, Color::BLUE);
+    lines.line_colored(p1, p4, f32::MAX, Color::WHITE);
+    lines.line_colored(p1, p5, f32::MAX, Color::WHITE);
+    lines.line_colored(p2, p4, f32::MAX, Color::WHITE);
+    lines.line_colored(p2, p6, f32::MAX, Color::WHITE);
+    lines.line_colored(p3, p5, f32::MAX, Color::WHITE);
+    lines.line_colored(p3, p6, f32::MAX, Color::WHITE);
+    lines.line_colored(p7, p4, f32::MAX, Color::WHITE);
+    lines.line_colored(p7, p5, f32::MAX, Color::WHITE);
+    lines.line_colored(p7, p6, f32::MAX, Color::WHITE);
+}
+// bb92e200 ends here
 
 // [[file:../bevy.note::deffe145][deffe145]]
 fn get_color(atom: &gchemol_core::Atom) -> Color {
@@ -168,6 +208,7 @@ pub fn spawn_molecule(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut lines: ResMut<DebugLines>,
     mol: Res<Molecule>,
 ) {
     let mol = &mol.inner;
@@ -207,6 +248,10 @@ pub fn spawn_molecule(
             transform,
             ..default()
         });
+    }
+    // lattice
+    if let Some(lat) = mol.get_lattice() {
+        show_lattice(lat, &mut lines);
     }
 
     // light
@@ -249,6 +294,7 @@ impl Plugin for MoleculePlugin {
         app.insert_resource(self.mol.clone())
             .add_startup_system(spawn_molecule)
             .add_plugin(LookTransformPlugin)
+            .add_plugin(DebugLinesPlugin::default())
             .add_plugin(OrbitCameraPlugin::default());
     }
 }

@@ -64,6 +64,7 @@ gchemol-core = { version="0.1.4", features=["adhoc"] }
 # wasm build panic issue: https://bevy-cheatbook.github.io/platforms/wasm/panic-console.html
 console_error_panic_hook = "0.1"
 # mendeleev = { version = "0.7", features = ["color"]}
+bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 
 # keep the following in sync with Bevy's dependencies
 winit = { version = "0.28", default-features = false }

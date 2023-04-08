@@ -30,9 +30,10 @@ impl ViewerCli {
         let args = Self::parse();
         args.verbose.setup_logger();
         let mut mol = Molecule::from_file(&args.molfile)?;
-        mol.unbuild_crystal();
+        let lat = mol.unbuild_crystal();
         mol.recenter();
         mol.rebond();
+        mol.lattice = lat;
 
         let mol_plugin = crate::molecule::MoleculePlugin::from_mol(mol);
 
