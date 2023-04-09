@@ -8,6 +8,19 @@ use bevy_prototype_debug_lines::*;
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
 use crate::camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+
+fn update_light_with_camera(
+    mut param_set: ParamSet<(
+        Query<(&mut Transform, With<DirectionalLight>)>,
+        Query<&Transform, With<PanOrbitCamera>>,
+    )>,
+) {
+    let camera_position = param_set.p1().single().translation;
+    for (mut transform, _mesh) in param_set.p0().iter_mut() {
+        let distance = transform.translation.distance(camera_position);
+        transform.translation = camera_position;
+    }
+}
 // 711fbcb5 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
@@ -309,22 +322,44 @@ pub fn spawn_molecules(
 
     // light
     // ambient light
+    let illuminance = 5500.0;
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 0.2,
+        brightness: 0.20,
     });
     let trans = Transform::from_xyz(5., 5., 5.);
-    commands.spawn(PointLightBundle {
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(-5., 5., -5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(5., 5., -5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
         transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
     let trans = Transform::from_xyz(5., -5., -5.);
-    commands.spawn(PointLightBundle {
-        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
-    let trans = Transform::from_xyz(-5., -5., -5.);
-    commands.spawn(SpotLightBundle {
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
         transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
@@ -354,10 +389,15 @@ impl MoleculePlugin {
 
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
+        use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame(0))
             .add_plugin(DebugLinesPlugin::default())
-            .add_plugin(PanOrbitCameraPlugin);
+            .add_plugin(PanOrbitCameraPlugin)
+            // .add_plugin(WorldInspectorPlugin::new())
+            .add_system(update_light_with_camera);
+
         match self.traj.mols.len() {
             0 => {
                 eprintln!("No molecule loaded!");

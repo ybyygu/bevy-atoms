@@ -98,6 +98,7 @@ use std::time::Duration;
 ///         .run();
 /// }
 /// ```
+
 pub struct PanOrbitCameraPlugin;
 
 impl Plugin for PanOrbitCameraPlugin {
@@ -263,6 +264,7 @@ fn pan_orbit_camera(
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut scroll_events: EventReader<MouseWheel>,
     mut camera_query: Query<(&mut PanOrbitCamera, &mut Transform, &mut Projection)>,
+    // mut light_query: Query<&mut Transform, With<PointLight>>,
 ) {
     for (mut pan_orbit, mut transform, mut projection) in camera_query.iter_mut() {
         if !pan_orbit.initialized {
@@ -274,7 +276,6 @@ fn pan_orbit_camera(
         }
 
         // 1 - Get Input
-
         let mut pan = Vec2::ZERO;
         let mut rotation_move = Vec2::ZERO;
         let mut scroll = 0.0;
@@ -310,7 +311,6 @@ fn pan_orbit_camera(
         }
 
         // 2 - Process input into target alpha/beta, or focus, radius
-
         if orbit_button_changed {
             // Only check for upside down when orbiting started or ended this frame,
             // so we don't reverse the horizontal direction while the user is still dragging
