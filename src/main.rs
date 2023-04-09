@@ -7,10 +7,12 @@ use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
-use bevy_game::GamePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use std::io::Cursor;
 use winit::window::Icon;
+
+use gchemol_view::GamePlugin;
+
 mod molecule;
 
 // when compiling to web using trunk.
@@ -37,6 +39,6 @@ fn main() {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    let _ = bevy_game::cli::ViewerCli::enter_main();
+    let _ = gchemol_view::cli::ViewerCli::enter_main();
 }
 // 1ba2a38a ends here
