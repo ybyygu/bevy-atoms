@@ -29,14 +29,15 @@ impl ViewerCli {
     pub fn enter_main() -> Result<()> {
         let args = Self::parse();
         args.verbose.setup_logger();
-        let mut mol = Molecule::from_file(&args.molfile)?;
+        let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
         // FIXME: should be refactored when UI is ready
-        let lat = mol.unbuild_crystal();
-        mol.recenter();
-        mol.rebond();
-        mol.lattice = lat;
-
-        let mol_plugin = crate::molecule::MoleculePlugin::from_mol(mol);
+        for mol in mols.iter_mut() {
+            let lat = mol.unbuild_crystal();
+            mol.recenter();
+            mol.rebond();
+            mol.lattice = lat;
+        }
+        let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
         App::new()
             .add_plugins(DefaultPlugins.set(WindowPlugin {

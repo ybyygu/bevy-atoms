@@ -45,6 +45,11 @@ impl Default for Molecule {
         Self { inner }
     }
 }
+
+#[derive(Resource, Clone, Debug, Default)]
+pub struct MoleculeTrajectory {
+    mols: Vec<gchemol_core::Molecule>,
+}
 // c068ff9c ends here
 
 // [[file:../bevy.note::bb92e200][bb92e200]]
@@ -53,7 +58,7 @@ fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
     Vec3::new(p[0] as f32, p[1] as f32, p[2] as f32)
 }
 
-fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines) {
+fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f32) {
     let p0 = lat.to_cart([0.0, 0.0, 0.0]);
     let p1 = lat.to_cart([1.0, 0.0, 0.0]);
     let p2 = lat.to_cart([0.0, 1.0, 0.0]);
@@ -70,18 +75,18 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines) {
     let p5 = as_vec3(p5);
     let p6 = as_vec3(p6);
     let p7 = as_vec3(p7);
-    lines.line_colored(p0, p1, f32::MAX, Color::RED);
-    lines.line_colored(p0, p2, f32::MAX, Color::YELLOW);
-    lines.line_colored(p0, p3, f32::MAX, Color::BLUE);
-    lines.line_colored(p1, p4, f32::MAX, Color::WHITE);
-    lines.line_colored(p1, p5, f32::MAX, Color::WHITE);
-    lines.line_colored(p2, p4, f32::MAX, Color::WHITE);
-    lines.line_colored(p2, p6, f32::MAX, Color::WHITE);
-    lines.line_colored(p3, p5, f32::MAX, Color::WHITE);
-    lines.line_colored(p3, p6, f32::MAX, Color::WHITE);
-    lines.line_colored(p7, p4, f32::MAX, Color::WHITE);
-    lines.line_colored(p7, p5, f32::MAX, Color::WHITE);
-    lines.line_colored(p7, p6, f32::MAX, Color::WHITE);
+    lines.line_colored(p0, p1, duration, Color::RED);
+    lines.line_colored(p0, p2, duration, Color::YELLOW);
+    lines.line_colored(p0, p3, duration, Color::BLUE);
+    lines.line_colored(p1, p4, duration, Color::WHITE);
+    lines.line_colored(p1, p5, duration, Color::WHITE);
+    lines.line_colored(p2, p4, duration, Color::WHITE);
+    lines.line_colored(p2, p6, duration, Color::WHITE);
+    lines.line_colored(p3, p5, duration, Color::WHITE);
+    lines.line_colored(p3, p6, duration, Color::WHITE);
+    lines.line_colored(p7, p4, duration, Color::WHITE);
+    lines.line_colored(p7, p5, duration, Color::WHITE);
+    lines.line_colored(p7, p6, duration, Color::WHITE);
 }
 // bb92e200 ends here
 
@@ -202,55 +207,60 @@ fn get_color(atom: &gchemol_core::Atom) -> Color {
 }
 // 45281d24 ends here
 
-// [[file:../bevy.note::deffe145][deffe145]]
-pub fn spawn_molecule(
+// [[file:../bevy.note::1c6c0570][1c6c0570]]
+pub fn spawn_molecules_animation(
+    time: Res<Time>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut lines: ResMut<DebugLines>,
-    mol: Res<Molecule>,
+    traj: Res<MoleculeTrajectory>,
 ) {
-    let mol = &mol.inner;
-    for (i, a) in mol.atoms() {
-        let [x, y, z] = a.position();
-        let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
-        commands
-            .spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::UVSphere {
-                    radius,
-                    ..Default::default()
+    let interval = 0.2;
+    let seconds = time.elapsed_seconds();
+
+    for mol in traj.mols.iter() {
+        for (i, a) in mol.atoms() {
+            let [x, y, z] = a.position();
+            let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
+            commands
+                .spawn(PbrBundle {
+                    mesh: meshes.add(Mesh::from(shape::UVSphere {
+                        radius,
+                        ..Default::default()
+                    })),
+                    material: materials.add(get_color(a).into()),
+                    transform: Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32)),
+                    ..default()
+                })
+                .insert(PickableBundle::default());
+        }
+        // add chemical bonds
+        for (i, j, b) in mol.bonds() {
+            let ai = mol.get_atom_unchecked(i);
+            let aj = mol.get_atom_unchecked(j);
+            let pi: Vec3 = ai.position().map(|v| v as f32).into();
+            let pj: Vec3 = aj.position().map(|v| v as f32).into();
+            let center = (pi + pj) / 2.0;
+            let dij = pj - pi;
+            let lij = dij.length();
+            let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
+            let transform = Transform::from_translation(center).with_rotation(rot);
+            commands.spawn(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cylinder {
+                    radius: 0.07,
+                    height: lij,
+                    ..default()
                 })),
-                material: materials.add(get_color(a).into()),
-                transform: Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32)),
+                material: materials.add(Color::GRAY.into()),
+                transform,
                 ..default()
-            })
-            .insert(PickableBundle::default());
-    }
-    // add chemical bonds
-    for (i, j, b) in mol.bonds() {
-        let ai = mol.get_atom_unchecked(i);
-        let aj = mol.get_atom_unchecked(j);
-        let pi: Vec3 = ai.position().map(|v| v as f32).into();
-        let pj: Vec3 = aj.position().map(|v| v as f32).into();
-        let center = (pi + pj) / 2.0;
-        let dij = pj - pi;
-        let lij = dij.length();
-        let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
-        let transform = Transform::from_translation(center).with_rotation(rot);
-        commands.spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cylinder {
-                radius: 0.07,
-                height: lij,
-                ..default()
-            })),
-            material: materials.add(Color::GRAY.into()),
-            transform,
-            ..default()
-        });
-    }
-    // lattice
-    if let Some(lat) = mol.get_lattice() {
-        show_lattice(lat, &mut lines);
+            });
+        }
+        // lattice
+        if let Some(lat) = mol.get_lattice() {
+            show_lattice(lat, &mut lines, f32::MAX);
+        }
     }
 
     // light
@@ -281,26 +291,37 @@ pub fn spawn_molecule(
         .insert(PanOrbitCamera::default())
         .insert(PickingCameraBundle::default());
 }
-// deffe145 ends here
+// 1c6c0570 ends here
 
 // [[file:../bevy.note::8ec82258][8ec82258]]
 #[derive(Debug, Clone)]
 pub struct MoleculePlugin {
-    mol: Molecule,
+    traj: MoleculeTrajectory,
 }
 
 impl MoleculePlugin {
-    pub fn from_mol(inner: gchemol_core::Molecule) -> Self {
-        Self { mol: Molecule { inner } }
+    /// Create animation from a vec of molecules
+    pub fn from_mols(mols: Vec<gchemol_core::Molecule>) -> Self {
+        Self {
+            traj: MoleculeTrajectory { mols },
+        }
     }
 }
 
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(self.mol.clone())
-            .add_startup_system(spawn_molecule)
+        app.insert_resource(self.traj.clone())
             .add_plugin(DebugLinesPlugin::default())
             .add_plugin(PanOrbitCameraPlugin);
+        match self.traj.mols.len() {
+            0 => {}
+            // 1 => {
+            //     // app.add_startup_system(spawn_molecule);
+            // }
+            _ => {
+                app.add_startup_system(spawn_molecules_animation);
+            }
+        }
     }
 }
 // 8ec82258 ends here
