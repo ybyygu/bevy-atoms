@@ -5,7 +5,7 @@
 
 // [[file:../bevy.note::3edfd207][3edfd207]]
 mod actions;
-// mod camera;
+mod camera;
 mod loading;
 mod menu;
 mod molecule;

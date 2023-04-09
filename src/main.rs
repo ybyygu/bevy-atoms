@@ -10,8 +10,6 @@ use bevy_mod_picking::DefaultPickingPlugins;
 
 use gchemol_view::GamePlugin;
 
-mod molecule;
-
 // when compiling to web using trunk.
 #[cfg(target_arch = "wasm32")]
 fn main() {

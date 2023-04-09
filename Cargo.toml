@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.1.2"
+version = "0.1.3"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
@@ -65,7 +65,8 @@ gchemol-core = { version="0.1.4", features=["adhoc"] }
 console_error_panic_hook = "0.1"
 # mendeleev = { version = "0.7", features = ["color"]}
 bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
-bevy_panorbit_camera = "0.1.1"
+# bevy_panorbit_camera = "0.1.1"
+lerp = "0.4.0"                  # for camera
 
 # keep the following in sync with Bevy's dependencies
 winit = { version = "0.28", default-features = false }

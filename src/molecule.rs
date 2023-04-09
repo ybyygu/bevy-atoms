@@ -7,7 +7,7 @@ use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
-use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
+use crate::camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 // 711fbcb5 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
