@@ -30,6 +30,7 @@ impl ViewerCli {
         let args = Self::parse();
         args.verbose.setup_logger();
         let mut mol = Molecule::from_file(&args.molfile)?;
+        // FIXME: should be refactored when UI is ready
         let lat = mol.unbuild_crystal();
         mol.recenter();
         mol.rebond();
@@ -38,7 +39,6 @@ impl ViewerCli {
         let mol_plugin = crate::molecule::MoleculePlugin::from_mol(mol);
 
         App::new()
-            // .add_plugins(DefaultPlugins)
             .add_plugins(DefaultPlugins.set(WindowPlugin {
                 exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
                 ..default()

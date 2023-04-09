@@ -3,13 +3,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
-use std::io::Cursor;
-use winit::window::Icon;
 
 use gchemol_view::GamePlugin;
 
