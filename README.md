@@ -33,9 +33,18 @@ Visualization of molecule trajectory (use arrow key to control the frame):
 
 # Todo List
 
--   [ ] better light system
+-   [X] better light system (still not perfect yet)
+-   [ ] fix rotation locking issue
 -   [ ] fix visualiation of lattice in trajectory animation
 -   [ ] label atoms
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
+
+
+# Credits
+
+Codes that inspired me:
+
+-   [Plonq/bevy\_panorbit\_camera: A simple pan and orbit camera for the Bevy game engine](https://github.com/Plonq/bevy_panorbit_camera)
+-   [NightsWatchGames/rubiks-cube: Rubik's cube made with bevy engine.](https://github.com/NightsWatchGames/rubiks-cube)
 
