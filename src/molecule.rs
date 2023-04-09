@@ -11,25 +11,20 @@ use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 // 711fbcb5 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
-#[derive(Clone, Debug, Component)]
-pub struct Atom {
-    element: usize,
-    symbol: String,
-    label: String,
-    color: Color,
-    radius: f32,
-}
-
 #[derive(Clone, Copy, Debug, Component)]
 pub struct Bond;
 
-/// 定义原子或化学键的位置
-#[derive(Component, Clone, Copy, Debug, Deref, DerefMut)]
-pub struct Position(Vec3);
-
-/// 定义原子或化学键的编号
 #[derive(Clone, Copy, Debug, Component)]
-pub struct Index(pub u64);
+pub struct Atom;
+
+#[derive(Clone, Copy, Debug, Component)]
+pub struct FrameIndex(usize);
+
+#[derive(Clone, Copy, Debug, Component)]
+pub struct AtomIndex(usize);
+
+#[derive(Clone, Copy, Debug, Component)]
+pub struct BondIndex(usize);
 // 031857dd ends here
 
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
@@ -45,6 +40,9 @@ impl Default for Molecule {
         Self { inner }
     }
 }
+
+#[derive(Resource, Clone, Debug, Default)]
+struct CurrentFrame(isize);
 
 #[derive(Resource, Clone, Debug, Default)]
 pub struct MoleculeTrajectory {
@@ -207,8 +205,43 @@ fn get_color(atom: &gchemol_core::Atom) -> Color {
 }
 // 45281d24 ends here
 
+// [[file:../bevy.note::20198b2d][20198b2d]]
+// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
+// enum FrameState {
+//     #[default]
+//     Pause,
+//     Play,
+// }
+
+fn play_animation(
+    traj: Res<MoleculeTrajectory>,
+    current_frame: Res<CurrentFrame>,
+    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>)>>,
+) {
+    let nframe = traj.mols.len() as isize;
+    // % operator not work for negative number. We need Euclidean division.
+    // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
+    let ci = current_frame.0.rem_euclid(nframe);
+    for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
+        if *fi == ci as usize {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
+    }
+}
+
+fn frame_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<CurrentFrame>) {
+    if keyboard_input.just_pressed(KeyCode::Right) {
+        current_frame.0 += 1;
+    } else if keyboard_input.just_pressed(KeyCode::Left) {
+        current_frame.0 -= 1;
+    }
+}
+// 20198b2d ends here
+
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
-pub fn spawn_molecules_animation(
+pub fn spawn_molecules(
     time: Res<Time>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -219,8 +252,10 @@ pub fn spawn_molecules_animation(
     let interval = 0.2;
     let seconds = time.elapsed_seconds();
 
-    for mol in traj.mols.iter() {
-        for (i, a) in mol.atoms() {
+    for (fi, mol) in traj.mols.iter().enumerate() {
+        // only show the first molecule on startup
+        let visibility = if fi == 0 { Visibility::Visible } else { Visibility::Hidden };
+        for (_, a) in mol.atoms() {
             let [x, y, z] = a.position();
             let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
             commands
@@ -231,10 +266,14 @@ pub fn spawn_molecules_animation(
                     })),
                     material: materials.add(get_color(a).into()),
                     transform: Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32)),
+                    visibility,
                     ..default()
                 })
+                .insert(Atom)
+                .insert(FrameIndex(fi))
                 .insert(PickableBundle::default());
         }
+
         // add chemical bonds
         for (i, j, b) in mol.bonds() {
             let ai = mol.get_atom_unchecked(i);
@@ -246,17 +285,22 @@ pub fn spawn_molecules_animation(
             let lij = dij.length();
             let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
             let transform = Transform::from_translation(center).with_rotation(rot);
-            commands.spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cylinder {
-                    radius: 0.07,
-                    height: lij,
+            commands
+                .spawn(PbrBundle {
+                    mesh: meshes.add(Mesh::from(shape::Cylinder {
+                        radius: 0.07,
+                        height: lij,
+                        ..default()
+                    })),
+                    material: materials.add(Color::GRAY.into()),
+                    transform,
+                    visibility,
                     ..default()
-                })),
-                material: materials.add(Color::GRAY.into()),
-                transform,
-                ..default()
-            });
+                })
+                .insert(Bond)
+                .insert(FrameIndex(fi));
         }
+
         // lattice
         if let Some(lat) = mol.get_lattice() {
             show_lattice(lat, &mut lines, f32::MAX);
@@ -311,15 +355,21 @@ impl MoleculePlugin {
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.traj.clone())
+            .insert_resource(CurrentFrame(0))
             .add_plugin(DebugLinesPlugin::default())
             .add_plugin(PanOrbitCameraPlugin);
         match self.traj.mols.len() {
-            0 => {}
-            // 1 => {
-            //     // app.add_startup_system(spawn_molecule);
-            // }
+            0 => {
+                eprintln!("No molecule loaded!");
+            }
+            1 => {
+                app.add_startup_system(spawn_molecules);
+            }
             _ => {
-                app.add_startup_system(spawn_molecules_animation);
+                use bevy::app::StartupSet::PostStartup;
+                app.add_startup_system(spawn_molecules)
+                    .add_system(frame_control.in_base_set(PostStartup))
+                    .add_system(play_animation.in_base_set(PostStartup));
             }
         }
     }
