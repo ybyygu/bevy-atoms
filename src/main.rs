@@ -8,8 +8,6 @@ use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
-use gchemol_view::GamePlugin;
-
 // when compiling to web using trunk.
 #[cfg(target_arch = "wasm32")]
 fn main() {

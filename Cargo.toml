@@ -57,7 +57,6 @@ bevy-inspector-egui = "0.18.0"
 bevy_mod_picking = "0.12.0"
 bevy_mod_raycast = "0.8.0"
 bevy_egui = "0.20"
-smooth-bevy-cameras = "0.8.0"
 gut = { version = "0.4.3", package = "gchemol-gut" }
 gchemol-core = { version="0.1.4", features=["adhoc"] }
 # text_parser = { version = "0.4.5", package = "gchemol-parser" }
