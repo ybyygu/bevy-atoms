@@ -1,0 +1,13 @@
+[tasks.run]
+command = "cargo"
+args = ["run", "--features", "bevy/dynamic_linking"]
+
+[tasks.release]
+script = '''#! /usr/bin/env bash
+set -xe
+cargo i --offline --root=releases/${CARGO_MAKE_CRATE_VERSION} --no-track --bins --force
+'''
+
+[tasks.web]
+command = "trunk"
+args = ["serve", "--port", "8889"]
