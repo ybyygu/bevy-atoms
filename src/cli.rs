@@ -4,6 +4,43 @@ use gut::fs::*;
 use gut::prelude::*;
 // imports:1 ends here
 
+// [[file:../bevy.note::101c2ae1][101c2ae1]]
+use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
+use bevy_console::{ConsoleConfiguration, ConsolePlugin};
+
+/// Prints given arguments to the console
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "log")]
+struct LogCommand {
+    /// Message to print
+    msg: String,
+    /// Number of times to print message
+    num: Option<i64>,
+}
+
+fn log_command(mut log: ConsoleCommand<LogCommand>, atoms: Query<(&Transform), With<crate::molecule::Atom>>) {
+    if let Some(Ok(LogCommand { msg, num })) = log.take() {
+        let repeat_count = num.unwrap_or(1);
+
+        for _ in 0..repeat_count {
+            reply!(log, "{msg}");
+        }
+
+        for player_transform in atoms.iter() {
+            reply!(
+                log,
+                "Pos: {:.2}, {:.2}, {:.2}",
+                player_transform.translation.x,
+                player_transform.translation.y,
+                player_transform.translation.z,
+            );
+        }
+
+        log.ok();
+    }
+}
+// 101c2ae1 ends here
+
 // [[file:../bevy.note::49c1ea76][49c1ea76]]
 use gchemol::prelude::*;
 use gchemol::Molecule;
@@ -44,11 +81,17 @@ impl ViewerCli {
                 exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
                 ..default()
             }))
-            .add_plugin(EguiPlugin)
+            // .add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
+            .add_plugin(ConsolePlugin)
+            .insert_resource(ConsoleConfiguration {
+                // override config here
+                ..Default::default()
+            })
             .add_plugin(mol_plugin)
+            .add_console_command::<LogCommand, _>(log_command)
             .run();
 
         Ok(())

@@ -43,6 +43,7 @@ gchemol-core = { version = "0.1.4", features = ["adhoc"] }
 console_error_panic_hook = "0.1"
 bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 lerp = "0.4.0"                                                         # for camera
+bevy_console = "0.7.0"          # command line UI
 
 # native build only:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

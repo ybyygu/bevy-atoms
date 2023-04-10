@@ -1,6 +1,6 @@
 [tasks.run]
 command = "cargo"
-args = ["run", "--features", "bevy/dynamic_linking"]
+args = ["run", "--features", "bevy/dynamic_linking", "${@}"]
 
 [tasks.check]
 command = "cargo"
