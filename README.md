@@ -15,7 +15,15 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 
 # Install
 
+
+## Binary install
+
 Download prebuilt binary for Linux on the [release](https://github.com/ybyygu/bevy-atoms/release) page.
+
+
+## Compile from sources
+
+-   follow [bevy setup guide](https://bevyengine.org/learn/book/getting-started/setup/)
 
 
 # How to use
