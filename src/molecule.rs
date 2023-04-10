@@ -253,6 +253,14 @@ fn frame_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<
 }
 // 20198b2d ends here
 
+// [[file:../bevy.note::87b3fe64][87b3fe64]]
+fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
+    // ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 2.0) as f32
+    let r = a.get_cov_radius().unwrap_or(1.0);
+    (r * 0.3 + 0.7) * 0.45
+}
+// 87b3fe64 ends here
+
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 pub fn spawn_molecules(
     time: Res<Time>,
@@ -270,7 +278,7 @@ pub fn spawn_molecules(
         let visibility = if fi == 0 { Visibility::Visible } else { Visibility::Hidden };
         for (_, a) in mol.atoms() {
             let [x, y, z] = a.position();
-            let radius = ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 3.0) as f32;
+            let radius = get_atom_display_size(a) as f32;
             commands
                 .spawn(PbrBundle {
                     mesh: meshes.add(Mesh::from(shape::UVSphere {
