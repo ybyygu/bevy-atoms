@@ -103,6 +103,66 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f
 }
 // bb92e200 ends here
 
+// [[file:../bevy.note::8139ae6a][8139ae6a]]
+#[derive(Component)]
+struct AtomLabel {
+    entity: Entity,
+}
+
+fn create_atom_label(mut commands: Commands, asset_server: Res<AssetServer>, atoms_query: Query<Entity, With<Atom>>) {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    for entity in &atoms_query {
+        let style = Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(50.),
+                right: Val::Px(15.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        commands
+            .spawn(
+                TextBundle::from_section(
+                    "Carbon",
+                    TextStyle {
+                        font: font.clone(),
+                        font_size: 30.0,
+                        ..default()
+                    },
+                )
+                .with_text_alignment(TextAlignment::Center)
+                .with_style(style),
+            )
+            .insert(AtomLabel { entity });
+    }
+}
+
+fn update_atom_labels(
+    mut commands: Commands,
+    atoms: Query<&Atom>,
+    camera: Query<(&mut Camera, &GlobalTransform), With<Camera3d>>,
+    mut labels: Query<(&mut Style, &AtomLabel)>,
+    labelled: Query<&GlobalTransform>,
+) {
+    let (camera, camera_global_transform) = camera.single();
+
+    for (mut style, label) in &mut labels {
+        let world_position = labelled.get(label.entity).unwrap().translation() + Vec3::Y;
+        match camera.world_to_viewport(camera_global_transform, world_position) {
+            Some(viewport_position) => {
+                style.position.top = Val::Px(viewport_position.y);
+                style.position.left = Val::Px(viewport_position.x);
+            }
+            None => {
+                // A hack to hide the text when the it's behind the camera
+                style.position.bottom = Val::Px(-1000.0);
+            }
+        }
+    }
+}
+// 8139ae6a ends here
+
 // [[file:../bevy.note::20198b2d][20198b2d]]
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 // enum FrameState {
@@ -144,6 +204,7 @@ pub fn spawn_molecules(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut lines: ResMut<DebugLines>,
+    asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
 ) {
     for (fi, mol) in traj.mols.iter().enumerate() {
@@ -261,13 +322,16 @@ impl Plugin for MoleculePlugin {
                 eprintln!("No molecule loaded!");
             }
             1 => {
-                app.add_startup_system(spawn_molecules);
+                app.add_startup_system(spawn_molecules)
+                    // .add_system(create_atom_label)
+                    ;
             }
             _ => {
                 use bevy::app::StartupSet::PostStartup;
                 app.add_startup_system(spawn_molecules)
                     // .add_system(frame_control.in_base_set(PostStartup));
                     .add_system(frame_control)
+                    // .add_system(create_atom_label)
                     // .add_system(play_animation.in_base_set(PostStartup));
                     .add_system(play_animation);
             }
