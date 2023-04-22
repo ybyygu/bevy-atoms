@@ -1,8 +1,8 @@
-// [[file:../bevy.note::*imports][imports:1]]
+// [[file:../bevy.note::ff77face][ff77face]]
 use gut::cli::*;
 use gut::fs::*;
-use gut::prelude::*;
-// imports:1 ends here
+use gut::prelude::Result;
+// ff77face ends here
 
 // [[file:../bevy.note::101c2ae1][101c2ae1]]
 use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
@@ -45,6 +45,7 @@ fn log_command(mut log: ConsoleCommand<LogCommand>, atoms: Query<(&Transform), W
 use gchemol::prelude::*;
 use gchemol::Molecule;
 
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
@@ -55,9 +56,6 @@ use bevy_mod_picking::DefaultPickingPlugins;
 #[clap(author, version, about)]
 /// A simple molecule viewer
 pub struct ViewerCli {
-    #[clap(flatten)]
-    verbose: Verbosity,
-
     /// path to molecule to compute
     molfile: PathBuf,
 }
@@ -65,7 +63,7 @@ pub struct ViewerCli {
 impl ViewerCli {
     pub fn enter_main() -> Result<()> {
         let args = Self::parse();
-        args.verbose.setup_logger();
+
         let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
         // FIXME: should be refactored when UI is ready
         for mol in mols.iter_mut() {
@@ -76,11 +74,18 @@ impl ViewerCli {
         }
         let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
+        let log_plugin = LogPlugin {
+            level: bevy::log::Level::INFO,
+            filter: "wgpu=error,bevy_render=info,gchemol_view=debug".to_string(),
+        };
+        let window_plugin = WindowPlugin {
+            exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+            ..default()
+        };
+        let default_plugin = DefaultPlugins.set(log_plugin).set(window_plugin);
+
         App::new()
-            .add_plugins(DefaultPlugins.set(WindowPlugin {
-                exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
-                ..default()
-            }))
+            .add_plugins(default_plugin)
             // .add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
