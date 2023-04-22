@@ -18,7 +18,7 @@ struct LogCommand {
     num: Option<i64>,
 }
 
-fn log_command(mut log: ConsoleCommand<LogCommand>, atoms: Query<(&Transform), With<crate::molecule::Atom>>) {
+fn log_command(mut log: ConsoleCommand<LogCommand>, atoms: Query<(&Transform), With<crate::player::Atom>>) {
     if let Some(Ok(LogCommand { msg, num })) = log.take() {
         let repeat_count = num.unwrap_or(1);
 
