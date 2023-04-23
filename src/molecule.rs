@@ -117,6 +117,12 @@ struct CurrentFrame(isize);
 pub struct MoleculeTrajectory {
     mols: Vec<gchemol_core::Molecule>,
 }
+
+/// Visilization state
+#[derive(Resource, Clone, Debug, Default)]
+pub struct VisilizationState {
+    pub display_label: bool,
+}
 // c068ff9c ends here
 
 // [[file:../bevy.note::bb92e200][bb92e200]]
@@ -159,7 +165,7 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f
 
 // [[file:../bevy.note::8139ae6a][8139ae6a]]
 #[derive(Component)]
-struct AtomLabel {
+pub struct AtomLabel {
     entity: Entity,
     offset: Vec3,
 }
@@ -244,7 +250,8 @@ fn update_atom_labels_with_camera(
 fn play_animation(
     traj: Res<MoleculeTrajectory>,
     current_frame: Res<CurrentFrame>,
-    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>, With<AtomLabel>)>>,
+    vis_state: Res<VisilizationState>,
+    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>)>>,
 ) {
     let nframe = traj.mols.len() as isize;
     // % operator not work for negative number. We need Euclidean division.
@@ -352,6 +359,7 @@ impl Plugin for MoleculePlugin {
 
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame(0))
+            .insert_resource(VisilizationState::default())
             .add_plugin(DebugLinesPlugin::default())
             .add_plugin(PanOrbitCameraPlugin)
             // .add_plugin(WorldInspectorPlugin::new())

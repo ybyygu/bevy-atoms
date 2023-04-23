@@ -8,35 +8,35 @@ use gut::prelude::Result;
 use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
 use bevy_console::{ConsoleConfiguration, ConsolePlugin};
 
-/// Prints given arguments to the console
+/// Label atoms with serial number or element symbols
 #[derive(Parser, ConsoleCommand)]
-#[command(name = "log")]
-struct LogCommand {
-    /// Message to print
-    msg: String,
-    /// Number of times to print message
-    num: Option<i64>,
+#[command(name = "label")]
+struct LabelCommand {
+    /// Atoms to be selected. If not set, all atoms will be selected.
+    selection: Option<String>,
+
+    /// Delete atom labels
+    #[arg(short, long)]
+    delete: bool,
 }
 
-fn log_command(mut log: ConsoleCommand<LogCommand>, atoms: Query<(&Transform), With<crate::player::Atom>>) {
-    if let Some(Ok(LogCommand { msg, num })) = log.take() {
-        let repeat_count = num.unwrap_or(1);
-
-        for _ in 0..repeat_count {
-            reply!(log, "{msg}");
+fn label_command(
+    mut cmd: ConsoleCommand<LabelCommand>,
+    mut state: ResMut<crate::molecule::VisilizationState>,
+    mut visibility_query: Query<&mut Visibility, With<crate::molecule::AtomLabel>>,
+) {
+    if let Some(Ok(LabelCommand { selection, delete })) = cmd.take() {
+        reply!(cmd, "{selection:?}");
+        state.display_label = !delete;
+        for mut visibility in &mut visibility_query {
+            if delete {
+                *visibility = Visibility::Hidden;
+            } else {
+                *visibility = Visibility::Visible;
+            }
         }
 
-        for player_transform in atoms.iter() {
-            reply!(
-                log,
-                "Pos: {:.2}, {:.2}, {:.2}",
-                player_transform.translation.x,
-                player_transform.translation.y,
-                player_transform.translation.z,
-            );
-        }
-
-        log.ok();
+        cmd.ok();
     }
 }
 // 101c2ae1 ends here
@@ -96,7 +96,7 @@ impl ViewerCli {
                 ..Default::default()
             })
             .add_plugin(mol_plugin)
-            .add_console_command::<LogCommand, _>(log_command)
+            .add_console_command::<LabelCommand, _>(label_command)
             .run();
 
         Ok(())
