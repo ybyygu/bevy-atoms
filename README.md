@@ -41,12 +41,13 @@ Visualization of molecule trajectory (use arrow key to control the frame):
 
 # Todo List
 
--   [X] better light system (still not perfect yet)
+-   [X] better light system (still not perfect)
+-   [ ] label atoms
 -   [ ] fix rotation locking issue
 -   [ ] fix visualiation of lattice in trajectory animation
--   [ ] label atoms
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
+-   [ ] write molecule to file in console window
 
 
 # Credits

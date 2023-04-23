@@ -8,23 +8,6 @@ use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
-// [[file:../bevy.note::711fbcb5][711fbcb5]]
-use crate::camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-
-fn update_light_with_camera(
-    mut param_set: ParamSet<(
-        Query<(&mut Transform, With<DirectionalLight>)>,
-        Query<&Transform, With<PanOrbitCamera>>,
-    )>,
-) {
-    let camera_position = param_set.p1().single().translation;
-    for (mut transform, _mesh) in param_set.p0().iter_mut() {
-        let distance = transform.translation.distance(camera_position);
-        transform.translation = camera_position;
-    }
-}
-// 711fbcb5 ends here
-
 // [[file:../bevy.note::031857dd][031857dd]]
 // #[derive(Clone, Copy, Debug, Component)]
 // pub struct Bond;
@@ -41,6 +24,77 @@ pub struct AtomIndex(usize);
 #[derive(Clone, Copy, Debug, Component)]
 pub struct BondIndex(usize);
 // 031857dd ends here
+
+// [[file:../bevy.note::711fbcb5][711fbcb5]]
+use crate::camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+
+fn update_light_with_camera(
+    mut param_set: ParamSet<(
+        Query<(&mut Transform, With<DirectionalLight>)>,
+        Query<&Transform, With<PanOrbitCamera>>,
+    )>,
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+) {
+    if let Ok(camera) = param_set.p1().get_single() {
+        let camera_position = camera.translation;
+        for (mut transform, _mesh) in param_set.p0().iter_mut() {
+            let distance = transform.translation.distance(camera_position);
+            transform.translation = camera_position;
+        }
+    }
+
+    let (camera, camera_transform) = camera_query.single();
+    let viewport = camera.world_to_viewport(camera_transform, Vec3::new(2.144404, 2.2027268, 2.6483808));
+}
+// 711fbcb5 ends here
+
+// [[file:../bevy.note::b93672bb][b93672bb]]
+fn setup_lights(commands: &mut Commands) {
+    // light
+    // ambient light
+    let illuminance = 5500.0;
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 0.20,
+    });
+    let trans = Transform::from_xyz(5., 5., 5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(-5., 5., -5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(5., 5., -5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+    let trans = Transform::from_xyz(5., -5., -5.);
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance,
+            ..default()
+        },
+        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+}
+// b93672bb ends here
 
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
 #[derive(Resource, Clone, Debug)]
@@ -107,56 +161,68 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f
 #[derive(Component)]
 struct AtomLabel {
     entity: Entity,
+    offset: Vec3,
 }
 
-fn create_atom_label(mut commands: Commands, asset_server: Res<AssetServer>, atoms_query: Query<Entity, With<Atom>>) {
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    for entity in &atoms_query {
-        let style = Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                top: Val::Px(50.),
-                right: Val::Px(15.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        commands
-            .spawn(
-                TextBundle::from_section(
-                    "Carbon",
-                    TextStyle {
-                        font: font.clone(),
-                        font_size: 30.0,
-                        ..default()
-                    },
-                )
-                .with_text_alignment(TextAlignment::Center)
-                .with_style(style),
-            )
-            .insert(AtomLabel { entity });
+impl AtomLabel {
+    pub fn new(entity: Entity) -> Self {
+        Self {
+            entity,
+            offset: Vec3::ZERO,
+        }
+    }
+
+    pub fn with_offset(mut self, offset: Vec3) -> Self {
+        self.offset = offset;
+        self
     }
 }
 
-fn update_atom_labels(
-    mut commands: Commands,
-    atoms: Query<&Atom>,
-    camera: Query<(&mut Camera, &GlobalTransform), With<Camera3d>>,
-    mut labels: Query<(&mut Style, &AtomLabel)>,
-    labelled: Query<&GlobalTransform>,
-) {
-    let (camera, camera_global_transform) = camera.single();
+fn create_label(asset_server: &Res<AssetServer>, text: String) -> TextBundle {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+    let style = Style {
+        position_type: PositionType::Absolute,
+        position: UiRect {
+            // top: Val::Px(50.),
+            // right: Val::Px(15.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
 
-    for (mut style, label) in &mut labels {
-        let world_position = labelled.get(label.entity).unwrap().translation() + Vec3::Y;
-        match camera.world_to_viewport(camera_global_transform, world_position) {
-            Some(viewport_position) => {
-                style.position.top = Val::Px(viewport_position.y);
-                style.position.left = Val::Px(viewport_position.x);
-            }
-            None => {
-                // A hack to hide the text when the it's behind the camera
-                style.position.bottom = Val::Px(-1000.0);
+    TextBundle::from_section(
+        text,
+        TextStyle {
+            font: font.clone(),
+            font_size: 22.0,
+            ..default()
+        },
+    )
+    .with_text_alignment(TextAlignment::Center)
+    .with_style(style)
+}
+
+fn update_atom_labels_with_camera(
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+    mut label_style_query: Query<(&AtomLabel, &mut Style, &CalculatedSize, &ComputedVisibility)>,
+    transform_query: Query<&Transform>,
+    windows: Query<&Window>,
+) {
+    let (camera, camera_transform) = camera_query.single();
+
+    let window = windows.single();
+    for (label, mut style, calc_size, visibility) in &mut label_style_query {
+        if visibility.is_visible() {
+            let label_size = calc_size.size;
+            if let Ok(atom_transform) = transform_query.get(label.entity) {
+                let atom_position = atom_transform.translation;
+                if let Some(screen_position) = camera.world_to_viewport(camera_transform, atom_position) {
+                    style.position.left = Val::Px(screen_position.x - label_size.x * 0.5 + label.offset.x);
+                    style.position.top = Val::Px(window.height() - (screen_position.y + label_size.y * 0.5 + label.offset.y));
+                } else {
+                    // A hack to hide the text when the it's behind the camera
+                    style.position.bottom = Val::Px(-1000.0);
+                }
             }
         }
     }
@@ -206,18 +272,40 @@ pub fn spawn_molecules(
     mut lines: ResMut<DebugLines>,
     asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
+    // global_transforms: Query<&GlobalTransform>,
 ) {
+    // light
+    // ambient light
+    setup_lights(&mut commands);
+
+    // mouse: zoom, rotate and translate
+    let camera3d = Camera3dBundle {
+        transform: Transform::from_translation([5.0, 0.0, 20.0].into()),
+        ..default()
+    };
+    let camera = camera3d.camera.clone();
+    let camera_global_transform = camera3d.global_transform;
+    commands
+        .spawn(camera3d)
+        .insert(PanOrbitCamera::default())
+        .insert(PickingCameraBundle::default());
+
+    // create atoms and bonds
     for (fi, mol) in traj.mols.iter().enumerate() {
         // only show the first molecule on startup
         let visible = fi == 0;
         for (i, a) in mol.atoms() {
             let mut atom = Atom::new(a);
             atom.set_visible(visible);
-            commands
-                .spawn(AtomBundle::new(atom, &mut meshes, &mut materials))
-                .insert(AtomIndex(i))
-                .insert(FrameIndex(fi));
-            // .insert(PickableBundle::default());
+            let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
+            // atom_bundle.create_label(&asset_server);
+            // let atom_world_position = atom_bundle.position();
+            // info!("{atom_world_position:?}");
+            let entity = commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(FrameIndex(fi)).id();
+
+            // create atom labels
+            let text = create_label(&asset_server, format!("{i}"));
+            commands.spawn(text).insert(AtomLabel::new(entity));
         }
 
         // add chemical bonds
@@ -238,56 +326,6 @@ pub fn spawn_molecules(
             show_lattice(lat, &mut lines, f32::MAX);
         }
     }
-
-    // light
-    // ambient light
-    let illuminance = 5500.0;
-    commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 0.20,
-    });
-    let trans = Transform::from_xyz(5., 5., 5.);
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance,
-            ..default()
-        },
-        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
-    let trans = Transform::from_xyz(-5., 5., -5.);
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance,
-            ..default()
-        },
-        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
-    let trans = Transform::from_xyz(5., 5., -5.);
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance,
-            ..default()
-        },
-        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
-    let trans = Transform::from_xyz(5., -5., -5.);
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance,
-            ..default()
-        },
-        transform: trans.looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
-
-    // mouse: zoom, rotate and translate
-    commands
-        .spawn(Camera3dBundle::default())
-        .insert(PanOrbitCamera::default())
-        .insert(PickingCameraBundle::default());
 }
 // 1c6c0570 ends here
 
@@ -308,6 +346,7 @@ impl MoleculePlugin {
 
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
+        use bevy::app::StartupSet::PostStartup;
         use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
         app.insert_resource(self.traj.clone())
@@ -323,13 +362,12 @@ impl Plugin for MoleculePlugin {
             }
             1 => {
                 app.add_startup_system(spawn_molecules)
-                    // .add_system(create_atom_label)
-                    ;
+                    // .add_system(update_atom_labels)
+                    .add_system(update_atom_labels_with_camera);
             }
             _ => {
-                use bevy::app::StartupSet::PostStartup;
                 app.add_startup_system(spawn_molecules)
-                    // .add_system(frame_control.in_base_set(PostStartup));
+                    .add_system(update_atom_labels_with_camera)
                     .add_system(frame_control)
                     // .add_system(create_atom_label)
                     // .add_system(play_animation.in_base_set(PostStartup));

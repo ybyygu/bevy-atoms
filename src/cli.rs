@@ -76,7 +76,7 @@ impl ViewerCli {
 
         let log_plugin = LogPlugin {
             level: bevy::log::Level::INFO,
-            filter: "wgpu=error,bevy_render=info,gchemol_view=debug".to_string(),
+            filter: "wgpu=error,gchemol_view=debug".to_string(),
         };
         let window_plugin = WindowPlugin {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,

@@ -166,10 +166,17 @@ impl Atom {
     }
 }
 
+#[derive(Component)]
+enum AtomLabel {
+    None,
+    Text(TextBundle),
+}
+
 #[derive(Bundle)]
 pub struct AtomBundle {
     pbr: PbrBundle,
     atom: Atom,
+    label: AtomLabel, // cannot use Option<TextBundle> here for Bundle trait constraint
 }
 
 impl AtomBundle {
@@ -188,7 +195,16 @@ impl AtomBundle {
                 ..default()
             },
             atom,
+            label: AtomLabel::None,
         }
+    }
+
+    pub fn position(&self) -> Vec3 {
+        self.atom.position
+    }
+
+    pub fn global_transform(&self) -> GlobalTransform {
+        self.pbr.global_transform
     }
 }
 // 0b92cef9 ends here
@@ -248,3 +264,53 @@ impl BondBundle {
     }
 }
 // 5a5c8b3f ends here
+
+// [[file:../bevy.note::4306e081][4306e081]]
+impl AtomBundle {
+    pub fn create_label(&mut self, asset_server: &Res<AssetServer>) {
+        info!("create label");
+        let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+        let style = Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(50.),
+                right: Val::Px(15.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let text = TextBundle::from_section(
+            "C",
+            TextStyle {
+                font: font.clone(),
+                font_size: 30.0,
+                ..default()
+            },
+        )
+        .with_text_alignment(TextAlignment::Center)
+        .with_style(style);
+
+        self.label = AtomLabel::Text(text);
+    }
+
+    pub fn update_label(&mut self, camera: &Camera, camera_global_transform: &GlobalTransform) {
+        match &mut self.label {
+            AtomLabel::Text(text) => {
+                let world_position = text.global_transform.translation() + Vec3::Y;
+                match camera.world_to_viewport(camera_global_transform, world_position) {
+                    Some(viewport_position) => {
+                        text.style.position.top = Val::Px(viewport_position.y);
+                        text.style.position.left = Val::Px(viewport_position.x);
+                    }
+                    None => {
+                        // A hack to hide the text when the it's behind the camera
+                        text.style.position.bottom = Val::Px(-1000.0);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+// 4306e081 ends here
