@@ -28,7 +28,16 @@ codegen-units = 1
 dev = ["bevy/bevy_dylib"]
 
 [dependencies]
-bevy = { version = "0.10" }
+bevy = { version = "0.10", default-features = false, features = [
+  "bevy_asset",
+  "bevy_winit",
+  "png",
+  "x11",
+  "bevy_render",
+  "bevy_core_pipeline",
+  "bevy_text",
+  "bevy_ui",
+] }
 bevy_asset_loader = { version = "0.15" }
 rand = { version = "0.8.3" }
 bevy-inspector-egui = "0.18.0"

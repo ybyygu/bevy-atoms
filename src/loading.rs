@@ -9,12 +9,9 @@ pub struct LoadingPlugin;
 /// If interested, take a look at <https://bevy-cheatbook.github.io/features/assets.html>
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_loading_state(
-            LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
-        )
-        .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
-        .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
-        .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading);
+        app.add_loading_state(LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu))
+            .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
+            .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading);
     }
 }
 
@@ -27,11 +24,11 @@ pub struct FontAssets {
     pub fira_sans: Handle<Font>,
 }
 
-#[derive(AssetCollection, Resource)]
-pub struct AudioAssets {
-    #[asset(path = "audio/flying.ogg")]
-    pub flying: Handle<AudioSource>,
-}
+// #[derive(AssetCollection, Resource)]
+// pub struct AudioAssets {
+//     #[asset(path = "audio/flying.ogg")]
+//     pub flying: Handle<AudioSource>,
+// }
 
 #[derive(AssetCollection, Resource)]
 pub struct TextureAssets {
