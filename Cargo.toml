@@ -29,21 +29,21 @@ dev = ["bevy/bevy_dylib"]
 
 [dependencies]
 bevy = { version = "0.10" }
-bevy_kira_audio = { version = "0.15" }
 bevy_asset_loader = { version = "0.15" }
 rand = { version = "0.8.3" }
 bevy-inspector-egui = "0.18.0"
 bevy_mod_picking = "0.12.0"
 bevy_mod_raycast = "0.8.0"
 bevy_egui = "0.20"
-gut = { version = "0.4.3", package = "gchemol-gut" }
-gchemol-core = { version = "0.1.4", features = ["adhoc"] }
-# text_parser = { version = "0.4.5", package = "gchemol-parser" }
 # wasm build panic issue: https://bevy-cheatbook.github.io/platforms/wasm/panic-console.html
 console_error_panic_hook = "0.1"
 bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 lerp = "0.4.0"                                                         # for camera
-bevy_console = "0.7.0"          # command line UI
+bevy_console = "0.7.0"                                                 # command line UI
+
+gut = { version = "0.4.3", package = "gchemol-gut" }
+gchemol-core = { version = "0.1.4", features = ["adhoc"] }
+# text_parser = { version = "0.4.5", package = "gchemol-parser" }
 
 # native build only:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
