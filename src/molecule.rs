@@ -178,7 +178,7 @@ impl AtomLabel {
     }
 }
 
-fn create_label(asset_server: &Res<AssetServer>, text: String) -> TextBundle {
+fn create_label(asset_server: &Res<AssetServer>, text: String, visible: bool) -> TextBundle {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let style = Style {
         position_type: PositionType::Absolute,
@@ -190,7 +190,7 @@ fn create_label(asset_server: &Res<AssetServer>, text: String) -> TextBundle {
         ..Default::default()
     };
 
-    TextBundle::from_section(
+    let mut text = TextBundle::from_section(
         text,
         TextStyle {
             font: font.clone(),
@@ -199,7 +199,11 @@ fn create_label(asset_server: &Res<AssetServer>, text: String) -> TextBundle {
         },
     )
     .with_text_alignment(TextAlignment::Center)
-    .with_style(style)
+    .with_style(style);
+
+    let visibility = if visible { Visibility::Visible } else { Visibility::Hidden };
+    text.visibility = visibility;
+    text
 }
 
 fn update_atom_labels_with_camera(
@@ -240,7 +244,7 @@ fn update_atom_labels_with_camera(
 fn play_animation(
     traj: Res<MoleculeTrajectory>,
     current_frame: Res<CurrentFrame>,
-    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>)>>,
+    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>, With<AtomLabel>)>>,
 ) {
     let nframe = traj.mols.len() as isize;
     // % operator not work for negative number. We need Euclidean division.
@@ -279,14 +283,8 @@ pub fn spawn_molecules(
     setup_lights(&mut commands);
 
     // mouse: zoom, rotate and translate
-    let camera3d = Camera3dBundle {
-        transform: Transform::from_translation([5.0, 0.0, 20.0].into()),
-        ..default()
-    };
-    let camera = camera3d.camera.clone();
-    let camera_global_transform = camera3d.global_transform;
     commands
-        .spawn(camera3d)
+        .spawn(Camera3dBundle::default())
         .insert(PanOrbitCamera::default())
         .insert(PickingCameraBundle::default());
 
@@ -298,14 +296,17 @@ pub fn spawn_molecules(
             let mut atom = Atom::new(a);
             atom.set_visible(visible);
             let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-            // atom_bundle.create_label(&asset_server);
-            // let atom_world_position = atom_bundle.position();
-            // info!("{atom_world_position:?}");
-            let entity = commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(FrameIndex(fi)).id();
+            let parent_entity = commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(FrameIndex(fi)).id();
 
             // create atom labels
-            let text = create_label(&asset_server, format!("{i}"));
-            commands.spawn(text).insert(AtomLabel::new(entity));
+            let text = create_label(&asset_server, format!("{i}"), false);
+            let child_entity = commands
+                .spawn(text)
+                .insert(AtomLabel::new(parent_entity))
+                .insert(FrameIndex(fi))
+                .id();
+            // FIXME: add hierarcy will make label invisible
+            // commands.entity(parent_entity).add_child(child_entity);
         }
 
         // add chemical bonds
@@ -368,10 +369,10 @@ impl Plugin for MoleculePlugin {
             _ => {
                 app.add_startup_system(spawn_molecules)
                     .add_system(update_atom_labels_with_camera)
-                    .add_system(frame_control)
+                    .add_system(frame_control.after(update_atom_labels_with_camera))
                     // .add_system(create_atom_label)
                     // .add_system(play_animation.in_base_set(PostStartup));
-                    .add_system(play_animation);
+                    .add_system(play_animation.after(update_atom_labels_with_camera));
             }
         }
     }
