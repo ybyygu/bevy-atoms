@@ -19,7 +19,7 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 
 ## Binary install
 
-Download prebuilt binary for Linux on the [release](https://github.com/ybyygu/gchemol-view/release) page.
+Download prebuilt binary for Linux on the [release](https://github.com/ybyygu/gchemol-view/releases) page.
 
 
 ## Compile from sources
