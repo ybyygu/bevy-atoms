@@ -19,7 +19,7 @@ fn main() {
 
     let mut mol = gchemol_core::Molecule::from_database("CH4");
     mol.rebond();
-    let mol_plugin = molecule::MoleculePlugin::from_mol(mol);
+    let mol_plugin = gchemol_view::molecule::MoleculePlugin::from_mol(mol);
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
