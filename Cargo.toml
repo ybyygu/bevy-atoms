@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.1.5"
+version = "0.1.6"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
