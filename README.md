@@ -39,6 +39,8 @@ Visualization of molecule trajectory (use arrow key to control the frame):
 
     gchemol-view traj.xyz
 
+Press "\`" key (KeyCode::Grave) to toggle console window. Press help for command usage.
+
 
 # Todo List
 

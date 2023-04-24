@@ -1,3 +1,4 @@
+// [[file:../bevy.note::80f1b161][80f1b161]]
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -9,7 +10,7 @@ pub struct LoadingPlugin;
 /// If interested, take a look at <https://bevy-cheatbook.github.io/features/assets.html>
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_loading_state(LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu))
+        app.add_loading_state(LoadingState::new(GameState::Loading).continue_to_state(GameState::Playing))
             .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
             .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading);
     }
@@ -35,3 +36,4 @@ pub struct TextureAssets {
     #[asset(path = "textures/bevy.png")]
     pub texture_bevy: Handle<Image>,
 }
+// 80f1b161 ends here

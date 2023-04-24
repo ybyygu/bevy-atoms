@@ -50,6 +50,7 @@ use bevy::prelude::*;
 use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
 #[derive(Debug, Parser)]
@@ -85,7 +86,12 @@ impl ViewerCli {
         let default_plugin = DefaultPlugins.set(log_plugin).set(window_plugin);
 
         App::new()
-            .add_plugins(default_plugin)
+            .add_plugins(
+                default_plugin
+                    .build()
+                    .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
+            )
+            // .add_plugin(crate::GamePlugin)
             // .add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
