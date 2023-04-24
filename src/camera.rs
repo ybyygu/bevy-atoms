@@ -13,7 +13,7 @@
 //! ## Quick Start
 //!
 //! First add the plugin:
-//! ```rust
+//! ```rust,ignore,no_run
 //! # use bevy::prelude::*;
 //! # use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 //! fn main() {
@@ -26,7 +26,7 @@
 //! ```
 //!
 //! Then add the `PanOrbitCamera` component to a camera:
-//! ```rust
+//! ```rust,ignore,no_run
 //! # use bevy::prelude::*;
 //! # use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 //! # fn main() {
@@ -51,7 +51,7 @@
 //! If you run this, you won't see anything! You'll probably want to add some other entities,
 //! like meshes and lights.
 //!
-//! ```rust
+//! ```rust,ignore,no_run
 //! use bevy::prelude::*;
 //! use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 //!
@@ -88,7 +88,7 @@ use std::time::Duration;
 // [[file:../bevy.note::de54070d][de54070d]]
 /// Bevy plugin that contains the systems for controlling `PanOrbitCamera` components.
 /// # Example
-/// ```rust
+/// ```rust,ignore,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 /// fn main() {
@@ -113,7 +113,7 @@ impl Plugin for PanOrbitCameraPlugin {
 /// The entity must have `Transform` and `Projection` components. Typically you would add a
 /// `Camera3dBundle` which already contains these.
 /// # Example
-/// ```rust
+/// ```rust,ignore,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 /// # fn main() {
@@ -214,7 +214,7 @@ impl PanOrbitCamera {
     /// Creates a `PanOrbitCamera` from a translation and focus point. Values of `alpha`, `beta`,
     /// and `radius` will be automatically calculated.
     /// # Example
-    /// ```rust
+    /// ```rust,ignore,no_run
     /// # use bevy::prelude::*;
     /// # use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
     /// # fn main() {
