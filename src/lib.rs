@@ -8,7 +8,7 @@
 mod camera;
 // mod loading;
 // mod menu;
-mod molecule;
+pub mod molecule;
 mod player;
 
 #[cfg(not(target_arch = "wasm32"))]
