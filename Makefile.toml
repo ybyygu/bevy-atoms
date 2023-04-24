@@ -1,3 +1,6 @@
+[env]
+BEVY_ASSET_PATH = "${CARGO_MAKE_WORKING_DIRECTORY}/assets"
+
 [tasks.run]
 command = "cargo"
 args = ["run", "--features", "bevy/dynamic_linking", "${@}"]
