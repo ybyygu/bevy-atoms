@@ -289,6 +289,18 @@ pub fn spawn_molecules(
     // ambient light
     setup_lights(&mut commands);
 
+    let center = traj
+        .mols
+        .iter()
+        .next()
+        .map(|mol| mol.center_of_geometry())
+        .unwrap_or_default()
+        .map(|x| x as f32);
+    let arcball_camera = PanOrbitCamera {
+        focus: center.into(),
+        ..default()
+    };
+
     // mouse: zoom, rotate and translate
     commands
         .spawn(Camera3dBundle::default())

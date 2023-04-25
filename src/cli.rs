@@ -69,7 +69,7 @@ impl ViewerCli {
         // FIXME: should be refactored when UI is ready
         for mol in mols.iter_mut() {
             let lat = mol.unbuild_crystal();
-            mol.recenter();
+            // mol.recenter();
             mol.rebond();
             mol.lattice = lat;
         }
