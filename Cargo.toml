@@ -28,16 +28,20 @@ lto = "thin"
 dev = ["bevy/bevy_dylib"]
 
 [dependencies]
+# https://bevy-cheatbook.github.io/setup/bevy-config.html#bevy-cargo-features
 bevy = { version = "0.10", default-features = false, features = [
-  "bevy_asset",
-  "bevy_winit",
+  "bevy_asset", # Assets management
+  "bevy_winit", # Window management
+  "x11",        # Linux: Support X11 windowing system
+  # bevy_render and bevy_core_pipeline are required for any application using Bevy rendering.
+  "bevy_render",        # Rendering framework core
+  "bevy_core_pipeline", # Common rendering abstractions
+  "bevy_pbr",           # 3D (physically-based) rendering
+  "bevy_text",          # Text/font rendering
+  "bevy_ui",            # UI toolkit
+
+  # File formats:
   "png",
-  "x11",
-  "bevy_render",
-  "bevy_core_pipeline",
-  "bevy_pbr",
-  "bevy_text",
-  "bevy_ui",
 ] }
 
 bevy_asset_loader = { version = "0.15" }
@@ -52,6 +56,7 @@ console_error_panic_hook = "0.1"
 bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 lerp = "0.4.0"                                                         # for camera
 bevy_console = "0.7.0"                                                 # command line UI
+bevy_panorbit_camera = "0.2.0"
 
 gut = { version = "0.4.4", package = "gchemol-gut" }
 gchemol-core = { version = "0.1.4", features = ["adhoc"] }

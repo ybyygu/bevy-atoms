@@ -26,7 +26,7 @@ pub struct BondIndex(usize);
 // 031857dd ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
-use crate::camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 fn update_light_with_camera(
     mut param_set: ParamSet<(
