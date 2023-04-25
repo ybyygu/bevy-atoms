@@ -298,13 +298,15 @@ pub fn spawn_molecules(
         .map(|x| x as f32);
     let arcball_camera = PanOrbitCamera {
         focus: center.into(),
+        allow_upside_down: true,
+        enabled: true,
         ..default()
     };
 
     // mouse: zoom, rotate and translate
     commands
         .spawn(Camera3dBundle::default())
-        .insert(PanOrbitCamera::default())
+        .insert(arcball_camera)
         .insert(PickingCameraBundle::default());
 
     // create atoms and bonds

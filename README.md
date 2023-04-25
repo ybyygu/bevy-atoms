@@ -46,7 +46,7 @@ Press "\`" key (KeyCode::Grave) to toggle console window. Press help for command
 
 -   [X] better light system (still not perfect)
 -   [X] label atoms
--   [ ] fix rotation locking issue
+-   [X] fix rotation locking issue
 -   [ ] fix visualiation of lattice in trajectory animation
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
