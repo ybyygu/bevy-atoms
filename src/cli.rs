@@ -6,7 +6,7 @@ use gut::prelude::Result;
 
 // [[file:../bevy.note::101c2ae1][101c2ae1]]
 use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
-use bevy_console::{ConsoleConfiguration, ConsolePlugin};
+use bevy_console::{ConsoleConfiguration, ConsolePlugin, ConsoleSet};
 
 /// Label atoms with serial number or element symbols
 #[derive(Parser, ConsoleCommand)]
@@ -18,6 +18,14 @@ struct LabelCommand {
     /// Delete atom labels
     #[arg(short, long)]
     delete: bool,
+}
+
+use bevy_console::{ConsoleOpen, PrintConsoleLine};
+use bevy_panorbit_camera::PanOrbitCamera;
+fn disable_arcball_camera_in_console(console: Res<ConsoleOpen>, mut arcball_camera_query: Query<&mut PanOrbitCamera>) {
+    if let Ok(mut arcball_camera) = arcball_camera_query.get_single_mut() {
+        arcball_camera.enabled = !console.open;
+    }
 }
 
 fn label_command(
@@ -103,6 +111,7 @@ impl ViewerCli {
             })
             .add_plugin(mol_plugin)
             .add_console_command::<LabelCommand, _>(label_command)
+            .add_system(disable_arcball_camera_in_console.after(ConsoleSet::ConsoleUI))
             .run();
 
         Ok(())

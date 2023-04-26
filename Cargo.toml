@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.1.7"
+version = "0.1.8"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
@@ -58,6 +58,8 @@ lerp = "0.4.0"                                                         # for cam
 bevy_console = "0.7.0"                                                 # command line UI
 # bevy_panorbit_camera = { version = "0.2.0", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
 # bevy_panorbit_camera = { version = "0.2.0", git = "https://github.com/Plonq/bevy_panorbit_camera" }
+# FIXME: there are some issues in bevy_panorbit_camera/bevy_egui that make molecule invisible
+# bevy_panorbit_camera = { features = ["bevy_egui"], path = "/home/ybyygu/Incoming/repos/bevy_panorbit_camera/" }
 bevy_panorbit_camera = { version = "0.2.0" }
 
 gut = { version = "0.4.4", package = "gchemol-gut" }
