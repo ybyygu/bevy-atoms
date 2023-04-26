@@ -200,7 +200,7 @@ fn create_label(asset_server: &Res<AssetServer>, text: String, visible: bool) ->
         text,
         TextStyle {
             font: font.clone(),
-            font_size: 22.0,
+            font_size: 14.0,
             ..default()
         },
     )
