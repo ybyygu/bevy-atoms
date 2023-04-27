@@ -1,18 +1,19 @@
-// [[file:../bevy.note::*src/lib.rs][src/lib.rs:1]]
+// [[file:../bevy.note::2fdba27f][2fdba27f]]
 // #![deny(warnings)]
 // #![deny(clippy::all)]
-// src/lib.rs:1 ends here
+// 2fdba27f ends here
 
 // [[file:../bevy.note::3edfd207][3edfd207]]
 // mod actions;
 // mod camera;
 // mod loading;
 // mod menu;
-pub mod molecule;
+mod net;
 mod player;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cli;
+pub mod molecule;
 // 3edfd207 ends here
 
 // [[file:../bevy.note::043e6795][043e6795]]
