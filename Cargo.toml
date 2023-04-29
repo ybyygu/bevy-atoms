@@ -65,7 +65,13 @@ bevy_panorbit_camera = { version = "0.2.0" }
 gut = { version = "0.4.4", package = "gchemol-gut" }
 gchemol-core = { version = "0.1.4", features = ["adhoc"] }
 # text_parser = { version = "0.4.5", package = "gchemol-parser" }
-tokio = { version = "1.11.0", features = ["net", "io-util", "sync", "rt-multi-thread"] }
+tokio = { version = "1.11.0", features = [
+  "net",
+  "io-util",
+  "sync",
+  "rt-multi-thread",
+] }
+axum = { version = "0.6.17", features = ["macros"] }
 # crossbeam-channel = "0.5.1"
 
 # native build only:

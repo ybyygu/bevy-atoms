@@ -10,6 +10,7 @@
 // mod menu;
 mod net;
 mod player;
+mod task;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cli;
