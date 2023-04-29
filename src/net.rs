@@ -37,16 +37,39 @@ mod handlers {
     use axum::Json;
     use gchemol_core::Molecule;
 
-    type TaskState = crate::task::TaskSender<Molecule, ()>;
+    pub type TaskState = crate::task::TaskSender<Molecule, ()>;
 
     #[axum::debug_handler]
-    pub(super) async fn view_molecule(State(client): State<TaskState>, Json(mol): Json<Molecule>) -> Result<(), AppError> {
+    pub(super) async fn view_molecule(
+        State(client): State<TaskState>,
+        Json(mol): Json<Molecule>,
+    ) -> Result<(), AppError> {
         // let computed = client.send(mol).await?;
         // Ok(Json(computed))
-        Ok(())
+        todo!();
     }
 }
 // 27477258 ends here
+
+// [[file:../bevy.note::fe9e7673][fe9e7673]]
+impl NetworkServer {
+    pub async fn serve_remote_view() -> Result<()> {
+        use axum::{routing::get, Router};
+
+        use axum::routing::post;
+        use gchemol_core::Molecule;
+        use handlers::view_molecule;
+
+        let (task_rx, task_tx) = crate::task::Task::<Molecule, ()>::new().split();
+        let app = Router::new().route("/view-molecule", post(view_molecule)).with_state(task_tx);
+        axum::Server::bind(&"127.0.0.1:3039".parse().unwrap())
+            .serve(app.into_make_service())
+            .await?;
+
+        Ok(())
+    }
+}
+// fe9e7673 ends here
 
 // [[file:../bevy.note::bd70c1ac][bd70c1ac]]
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -61,7 +84,7 @@ struct NetworkServer {
     runtime: Runtime,
 
     /// Handle to task that listens for new connections.
-    listener_task: Option<tokio::task::JoinHandle<()>>,
+    listener_task: Option<tokio::task::JoinHandle<std::result::Result<(), bevy::asset::Error>>>,
 }
 
 /// Settings to configure the network, both client and server
@@ -83,7 +106,7 @@ impl NetworkServer {
 
     pub fn listen(&mut self) -> Result<()> {
         debug!("Started listening");
-        self.listener_task = Some(self.runtime.spawn(start_server()));
+        self.listener_task = Some(self.runtime.spawn(Self::serve_remote_view()));
 
         Ok(())
     }
@@ -97,18 +120,6 @@ impl NetworkServer {
             conn.abort();
         }
     }
-}
-
-async fn start_server() {
-    use axum::{routing::get, Router};
-
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
-
-    axum::Server::bind(&"0.0.0.0:3039".parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
 }
 // bd70c1ac ends here
 
