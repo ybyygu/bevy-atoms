@@ -275,6 +275,38 @@ fn frame_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<
 }
 // 20198b2d ends here
 
+// [[file:../bevy.note::874463e2][874463e2]]
+pub fn spawn_molecule_adhoc(
+    mol: &gchemol_core::Molecule,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<StandardMaterial>>,
+    mut lines: &mut ResMut<DebugLines>,
+) {
+    // spawn atoms
+    for (i, a) in mol.atoms() {
+        let mut atom = Atom::new(a);
+        let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
+        commands.spawn(atom_bundle);
+    }
+
+    // add chemical bonds
+    for (i, j, b) in mol.bonds() {
+        let ai = mol.get_atom_unchecked(i);
+        let aj = mol.get_atom_unchecked(j);
+        let atom1 = Atom::new(ai);
+        let atom2 = Atom::new(aj);
+        let mut bond = Bond::new(atom1, atom2);
+        commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials));
+    }
+
+    // lattice
+    if let Some(lat) = mol.get_lattice() {
+        show_lattice(lat, &mut lines, f32::MAX);
+    }
+}
+// 874463e2 ends here
+
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 pub fn spawn_molecules(
     mut commands: Commands,

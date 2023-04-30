@@ -104,18 +104,17 @@ mod systems {
     }
 
     pub fn handle_remote_molecule_view(
-        mut commands: Commands,
         mut reader: EventReader<StreamEvent>,
+        mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
+        mut materials: ResMut<Assets<StandardMaterial>>,
+        mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
     ) {
         for (_per_frame, StreamEvent(mol)) in reader.iter().enumerate() {
             info!("handle received mol: {}", mol.title());
 
-            // show a cube on received
-            commands.spawn(PbrBundle {
-                mesh: meshes.add(shape::Cube::default().into()),
-                ..default()
-            });
+            // show molecule on received
+            crate::molecule::spawn_molecule_adhoc(mol, &mut commands, &mut meshes, &mut materials, &mut lines);
         }
     }
 
