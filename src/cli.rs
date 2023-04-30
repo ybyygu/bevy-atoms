@@ -67,13 +67,27 @@ use bevy_mod_picking::DefaultPickingPlugins;
 pub struct ViewerCli {
     /// path to molecule to compute
     molfile: PathBuf,
+
+    #[arg(long)]
+    /// Client side only (ad-hoc)
+    client: bool,
 }
 
 impl ViewerCli {
     pub fn enter_main() -> Result<()> {
         let args = Self::parse();
 
+        // FIXME: remove when net ready
+        if args.client {
+            let mol = gchemol::Molecule::from_file(&args.molfile)?;
+            let client = reqwest::blocking::Client::builder().build().expect("reqwest client");
+            let uri = format!("http://{}/view-molecule", "127.0.0.1:3039");
+            let resp = client.post(&uri).json(&mol).send()?.text()?;
+            dbg!(resp);
+            return Ok(());
+        }
         let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
+
         // FIXME: should be refactored when UI is ready
         for mol in mols.iter_mut() {
             let lat = mol.unbuild_crystal();
