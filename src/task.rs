@@ -1,4 +1,4 @@
-// [[file:../bevy.note::fc11019a][fc11019a]]
+// [[file:../bevy.note::57f6810f][57f6810f]]
 // #![deny(warnings)]
 //! Task for remote execution
 //!
@@ -24,24 +24,26 @@
 //!     // ...
 //! }
 //! ```
-// fc11019a ends here
+// 57f6810f ends here
 
 // [[file:../bevy.note::d0a34fac][d0a34fac]]
+use crossbeam_channel::{bounded, Receiver, Sender};
+use tokio::sync::oneshot;
+
 use gut::prelude::*;
-use tokio::sync::{mpsc, oneshot};
 
 use std::fmt::Debug;
 use std::marker::Send;
 // d0a34fac ends here
 
-// [[file:../bevy.note::*types][types:1]]
+// [[file:../bevy.note::6ebde6a7][6ebde6a7]]
 type Computed<O> = O;
-type TxInput<I, O> = mpsc::Sender<RemoteIO<I, O>>;
+type TxInput<I, O> = Sender<RemoteIO<I, O>>;
 
 /// The receiver of task for remote execution
-pub type RxInput<I, O> = mpsc::Receiver<RemoteIO<I, O>>;
+pub type RxInput<I, O> = Receiver<RemoteIO<I, O>>;
 /// The sender of computational results.
-pub type TxOutput<O> = oneshot::Sender<Computed<O>>;
+pub type TxOutput<O> = Sender<Computed<O>>;
 
 /// RemoteIO contains input and output for remote execution. The first field in tuple
 /// is job input, and the second is for writing job output.
@@ -52,9 +54,9 @@ pub struct RemoteIO<I, O>(
     /// A oneshot channel for send computational output.
     pub TxOutput<O>,
 );
-// types:1 ends here
+// 6ebde6a7 ends here
 
-// [[file:../bevy.note::cf62514b][cf62514b]]
+// [[file:../bevy.note::5955ef0d][5955ef0d]]
 /// The client side for remote execution
 #[derive(Debug, Clone, Default)]
 pub struct TaskSender<I, O> {
@@ -63,19 +65,19 @@ pub struct TaskSender<I, O> {
 
 impl<I: Debug, O: Debug + Send> TaskSender<I, O> {
     /// Ask remote side compute with `input` and return the computed.
-    pub async fn send(&self, input: impl Into<I>) -> Result<Computed<O>> {
-        let (tx, rx) = tokio::sync::oneshot::channel();
+    pub fn send(&self, input: impl Into<I>) -> Result<Computed<O>> {
+        // zero-capacity channel in order to pair up and pass the message over
+        let (tx, rx) = bounded(0);
         self.tx_inp
             .as_ref()
             .expect("task input")
             .send(RemoteIO(input.into(), tx))
-            .await
             .map_err(|err| format_err!("task send error: {err:?}"))?;
-        let computed = rx.await?;
+        let computed = rx.recv()?;
         Ok(computed)
     }
 }
-// cf62514b ends here
+// 5955ef0d ends here
 
 // [[file:../bevy.note::778f4e75][778f4e75]]
 /// The server side for remote execution
@@ -86,17 +88,20 @@ pub struct TaskReceiver<I, O> {
 
 impl<I, O> TaskReceiver<I, O> {
     /// Receives the next task for this receiver.
-    pub async fn recv(&mut self) -> Option<RemoteIO<I, O>> {
-        self.rx_inp.recv().await
+    pub fn recv(&mut self) -> Option<RemoteIO<I, O>> {
+        self.rx_inp.recv().ok()
+    }
+
+    pub fn try_iter(&self) -> crossbeam_channel::TryIter<RemoteIO<I, O>> {
+        self.rx_inp.try_iter()
     }
 }
 
 fn new_interactive_task<I, O>() -> (TaskReceiver<I, O>, TaskSender<I, O>) {
-    let (tx_inp, rx_inp) = tokio::sync::mpsc::channel(1);
+    let (tx_inp, rx_inp) = bounded(1);
 
     let server = TaskReceiver { rx_inp };
     let client = TaskSender { tx_inp: tx_inp.into() };
-
     (server, client)
 }
 // 778f4e75 ends here
