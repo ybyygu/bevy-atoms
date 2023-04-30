@@ -66,14 +66,11 @@ gut = { version = "0.4.4", package = "gchemol-gut" }
 gchemol-core = { version = "0.1.4", features = ["adhoc"] }
 # text_parser = { version = "0.4.5", package = "gchemol-parser" }
 tokio = { version = "1.11.0", features = [
-  "net",
-  "io-util",
   "sync",
-  "rt-multi-thread",
 ] }
 axum = { version = "0.6.17", features = ["macros"] }
-# crossbeam-channel = "0.5.1"
-bevy-tokio-tasks = "0.10.2"
+crossbeam-channel = "0.5.1"
+futures-lite = "1.13.0"
 
 # native build only:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
