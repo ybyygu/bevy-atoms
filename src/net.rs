@@ -19,7 +19,7 @@ struct NetworkServer {}
 
 impl NetworkServer {
     pub(crate) fn new() -> Self {
-        todo!();
+        Self {}
     }
 }
 // 02dd4467 ends here
@@ -85,64 +85,36 @@ mod routes {
 }
 // 27477258 ends here
 
-// [[file:../bevy.note::d1858fa3][d1858fa3]]
-use bevy::tasks::{IoTaskPool, Task};
-use futures_lite::future;
-
-#[derive(Resource)]
-struct RemoteMoleculeTask(Task<Option<Molecule>>);
-
-/// Receive molecule sent from client side
-async fn recv_molecule_from(mut task_rx: crate::task::TaskReceiver<Molecule, ()>) -> Option<Molecule> {
-    use crate::task::RemoteIO;
-
-    info!("hello");
-    if let Some(RemoteIO(mol, tx_out)) = task_rx.recv().await {
-        // compute with job input
-        // let output = compute_with(mol)?;
-        // send job output to client side
-        tx_out.send(()).ok()?;
-        Some(mol)
-    } else {
-        // task channel closed
-        None
-    }
-}
+// [[file:../bevy.note::77121fc1][77121fc1]]
+use bevy_tokio_tasks::{TaskContext, TokioTasksPlugin, TokioTasksRuntime};
 
 /// Start remote view service listening on molecules from remote client side.
-pub fn start_remote_view_service(mut commands: Commands) {
+fn start_remote_view_service(mut commands: Commands, runtime: ResMut<TokioTasksRuntime>) {
     info!("starting remote view service ...");
 
     let (task_rx, task_tx) = crate::task::Task::<Molecule, ()>::new().split();
-    IoTaskPool::get().spawn(routes::serve_remote_view(task_tx)).detach();
-
-    let task = IoTaskPool::get().spawn(recv_molecule_from(task_rx));
-    commands.insert_resource(RemoteMoleculeTask(task));
+    runtime.spawn_background_task(|mut ctx| async move {
+        self::routes::serve_remote_view(task_tx).await;
+        ctx.run_on_main_thread(move |ctx| {
+            if let Some(mut clear_color) = ctx.world.get_resource_mut::<ClearColor>() {
+                // clear_color.0 = COLORS[color_index];
+                // println!("Changed clear color to {:?}", clear_color.0);
+            }
+        })
+        .await;
+    });
 }
-
-pub fn handle_remote_molecule(mut task: ResMut<RemoteMoleculeTask>) {
-    if let Some(mol_task) = future::block_on(future::poll_once(&mut task.0)) {
-        if let Some(mol) = mol_task {
-            let natoms = mol.natoms();
-            info!("get molecule: {natoms}");
-        } else {
-            debug!("mol task channel closed");
-        }
-    } else {
-        debug!("not ready");
-    }
-}
-// d1858fa3 ends here
+// 77121fc1 ends here
 
 // [[file:../bevy.note::0e0418a7][0e0418a7]]
 pub struct ServerPlugin;
 
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(NetworkServer::new())
-            .insert_resource(NetworkSettings::default())
-            .add_startup_system(start_remote_view_service)
-            .add_system(handle_remote_molecule);
+        app.insert_resource(NetworkSettings::default())
+            .add_plugin(TokioTasksPlugin::default())
+            .add_startup_system(start_remote_view_service);
+        // .add_system(handle_remote_molecule);
     }
 }
 // 0e0418a7 ends here
