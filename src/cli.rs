@@ -101,6 +101,7 @@ impl ViewerCli {
             )
             // .add_plugin(crate::GamePlugin)
             // .add_plugin(EguiPlugin)
+            .add_plugin(crate::net::ServerPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
