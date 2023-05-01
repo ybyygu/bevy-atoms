@@ -122,6 +122,13 @@ mod systems {
         commands.insert_resource(StreamReceiver(rx));
         commands.insert_resource(server);
     }
+
+    pub fn stop_server_on_exit(mut exit_events: EventReader<bevy::app::AppExit>, mut server: ResMut<NetworkServer>) {
+        for _ in exit_events.iter() {
+            server.stop();
+            break;
+        }
+    }
 }
 // a39e37a0 ends here
 
@@ -183,6 +190,7 @@ impl Plugin for ServerPlugin {
             .add_event::<systems::StreamEvent>()
             .add_startup_system(systems::setup_remote_view_service)
             .add_system(systems::read_molecule_stream)
+            .add_system(systems::stop_server_on_exit)
             .add_system(systems::handle_remote_molecule_view);
     }
 }
