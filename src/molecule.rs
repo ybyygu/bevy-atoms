@@ -9,14 +9,7 @@ use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
-// #[derive(Clone, Copy, Debug, Component)]
-// pub struct Bond;
-
-// #[derive(Clone, Copy, Debug, Component)]
-// pub struct Atom;
-
-#[derive(Clone, Copy, Debug, Component)]
-pub struct FrameIndex(usize);
+use crate::player::FrameIndex;
 
 #[derive(Clone, Copy, Debug, Component)]
 pub struct AtomIndex(usize);
@@ -240,18 +233,11 @@ fn update_atom_labels_with_camera(
 // 8139ae6a ends here
 
 // [[file:../bevy.note::20198b2d][20198b2d]]
-// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
-// enum FrameState {
-//     #[default]
-//     Pause,
-//     Play,
-// }
-
 fn play_animation(
     traj: Res<MoleculeTrajectory>,
     current_frame: Res<CurrentFrame>,
     vis_state: Res<VisilizationState>,
-    mut visibility_query: Query<(&mut Visibility, &FrameIndex), Or<(With<Atom>, With<Bond>)>>,
+    mut visibility_query: Query<(&mut Visibility, &FrameIndex), With<crate::player::Molecule>>,
 ) {
     let nframe = traj.mols.len() as isize;
     // % operator not work for negative number. We need Euclidean division.
@@ -275,38 +261,6 @@ fn frame_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<
 }
 // 20198b2d ends here
 
-// [[file:../bevy.note::874463e2][874463e2]]
-pub fn spawn_molecule_adhoc(
-    mol: &gchemol_core::Molecule,
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<StandardMaterial>>,
-    mut lines: &mut ResMut<DebugLines>,
-) {
-    // spawn atoms
-    for (i, a) in mol.atoms() {
-        let mut atom = Atom::new(a);
-        let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-        commands.spawn(atom_bundle);
-    }
-
-    // add chemical bonds
-    for (i, j, b) in mol.bonds() {
-        let ai = mol.get_atom_unchecked(i);
-        let aj = mol.get_atom_unchecked(j);
-        let atom1 = Atom::new(ai);
-        let atom2 = Atom::new(aj);
-        let mut bond = Bond::new(atom1, atom2);
-        commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials));
-    }
-
-    // lattice
-    if let Some(lat) = mol.get_lattice() {
-        show_lattice(lat, &mut lines, f32::MAX);
-    }
-}
-// 874463e2 ends here
-
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 pub fn spawn_molecules(
     mut commands: Commands,
@@ -315,7 +269,6 @@ pub fn spawn_molecules(
     mut lines: ResMut<DebugLines>,
     asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
-    // global_transforms: Query<&GlobalTransform>,
 ) {
     // light
     // ambient light
@@ -345,40 +298,15 @@ pub fn spawn_molecules(
     for (fi, mol) in traj.mols.iter().enumerate() {
         // only show the first molecule on startup
         let visible = fi == 0;
-        for (i, a) in mol.atoms() {
-            let mut atom = Atom::new(a);
-            atom.set_visible(visible);
-            let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-            let parent_entity = commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(FrameIndex(fi)).id();
-
-            // create atom labels
-            let text = create_label(&asset_server, format!("{i}"), false);
-            let child_entity = commands
-                .spawn(text)
-                .insert(AtomLabel::new(parent_entity))
-                .insert(FrameIndex(fi))
-                .id();
-            // FIXME: add hierarcy will make label invisible
-            // commands.entity(parent_entity).add_child(child_entity);
-        }
-
-        // add chemical bonds
-        for (i, j, b) in mol.bonds() {
-            let ai = mol.get_atom_unchecked(i);
-            let aj = mol.get_atom_unchecked(j);
-            let atom1 = Atom::new(ai);
-            let atom2 = Atom::new(aj);
-            let mut bond = Bond::new(atom1, atom2);
-            bond.set_visible(visible);
-            commands
-                .spawn(BondBundle::new(bond, &mut meshes, &mut materials))
-                .insert(FrameIndex(fi));
-        }
-
-        // lattice
-        if let Some(lat) = mol.get_lattice() {
-            show_lattice(lat, &mut lines, f32::MAX);
-        }
+        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials, &mut lines);
+        // for (i, a) in mol.atoms() {
+        //     // create atom labels
+        //     let text = create_label(&asset_server, format!("{i}"), false);
+        //     commands
+        //         .spawn(text)
+        //         .insert(AtomLabel::new(parent_entity))
+        //         .insert(FrameIndex(fi));
+        // }
     }
 }
 // 1c6c0570 ends here

@@ -108,7 +108,8 @@ mod systems {
         for (_per_frame, StreamEvent(mol)) in reader.iter().enumerate() {
             info!("handle received mol: {}", mol.title());
             // show molecule on received
-            crate::molecule::spawn_molecule_adhoc(mol, &mut commands, &mut meshes, &mut materials, &mut lines);
+            crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
+            break;
         }
     }
 

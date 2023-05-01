@@ -49,6 +49,29 @@ fn label_command(
 }
 // 101c2ae1 ends here
 
+// [[file:../bevy.note::22cddf8a][22cddf8a]]
+/// Delete molecule
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "delete")]
+struct DeleteCommand {
+    //
+}
+
+fn delete_command(
+    mut commands: Commands,
+    mut cmd: ConsoleCommand<DeleteCommand>,
+    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+) {
+    if let Some(Ok(DeleteCommand {})) = cmd.take() {
+        if let Ok(molecule_entity) = molecule_query.get_single() {
+            info!("remove molecule");
+            commands.entity(molecule_entity).despawn_recursive();
+            cmd.ok();
+        }
+    }
+}
+// 22cddf8a ends here
+
 // [[file:../bevy.note::49c1ea76][49c1ea76]]
 use gchemol::prelude::*;
 use gchemol::Molecule;
@@ -126,6 +149,7 @@ impl ViewerCli {
             })
             .add_plugin(mol_plugin)
             .add_console_command::<LabelCommand, _>(label_command)
+            .add_console_command::<DeleteCommand, _>(delete_command)
             .add_system(disable_arcball_camera_in_console.after(ConsoleSet::ConsoleUI))
             .run();
 
