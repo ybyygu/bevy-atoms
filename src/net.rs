@@ -104,9 +104,15 @@ mod systems {
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
         mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
+        molecule_query: Query<Entity, With<crate::player::Molecule>>,
     ) {
         for (_per_frame, StreamEvent(mol)) in reader.iter().enumerate() {
             info!("handle received mol: {}", mol.title());
+            // remove existing molecule
+            if let Ok(molecule_entity) = molecule_query.get_single() {
+                info!("molecule removed");
+                commands.entity(molecule_entity).despawn_recursive();
+            }
             // show molecule on received
             crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
             break;
