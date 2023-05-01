@@ -1,7 +1,7 @@
 // [[file:../bevy.note::495e3d25][495e3d25]]
 use bevy::prelude::*;
-use gut::prelude::Result;
 
+use gut::prelude::Result;
 use gchemol_core::Molecule;
 // 495e3d25 ends here
 
@@ -12,11 +12,6 @@ use std::net::{SocketAddr, ToSocketAddrs};
 #[derive(Resource, Default)]
 struct NetworkSettings {
     address: Option<SocketAddr>,
-}
-
-#[derive(Resource, Default)]
-struct RemoteMolecule {
-    inner: Option<Molecule>,
 }
 // 02dd4467 ends here
 
@@ -66,10 +61,8 @@ mod routes {
 
     /// Start remote view service listening on molecules from remote client side.
     pub async fn serve_remote_view(task_tx: Sender<Molecule>) -> Result<()> {
-        use axum::{routing::get, Router};
-
         use axum::routing::post;
-        use gchemol_core::Molecule;
+        use axum::{routing::get, Router};
 
         super::info!("start axum service ...");
         let app = Router::new().route("/view-molecule", post(view_molecule)).with_state(task_tx);
@@ -84,11 +77,13 @@ mod routes {
 
 // [[file:../bevy.note::a39e37a0][a39e37a0]]
 mod systems {
+    #![deny(warnings)]
+
     use super::server::NetworkServer;
 
     use bevy::prelude::*;
     // Using crossbeam_channel instead of std as std `Receiver` is `!Sync`
-    use crossbeam_channel::{bounded, Receiver};
+    use crossbeam_channel::Receiver;
     use gchemol_core::Molecule;
 
     #[derive(Resource, Deref)]
@@ -112,7 +107,6 @@ mod systems {
     ) {
         for (_per_frame, StreamEvent(mol)) in reader.iter().enumerate() {
             info!("handle received mol: {}", mol.title());
-
             // show molecule on received
             crate::molecule::spawn_molecule_adhoc(mol, &mut commands, &mut meshes, &mut materials, &mut lines);
         }
@@ -122,14 +116,11 @@ mod systems {
     pub fn setup_remote_view_service(mut commands: Commands) {
         info!("starting remote view service ...");
 
-        let mut server = super::server::NetworkServer::new();
+        let mut server = NetworkServer::new();
         // listen on client requests for remote view of molecule
-        let (tx, rx) = bounded::<Molecule>(1);
-        let h1 = server.runtime.spawn(super::routes::serve_remote_view(tx));
-        server.listener_task = h1.into();
-
-        commands.insert_resource(server);
+        let rx = server.listen();
         commands.insert_resource(StreamReceiver(rx));
+        commands.insert_resource(server);
     }
 }
 // a39e37a0 ends here
@@ -137,28 +128,37 @@ mod systems {
 // [[file:../bevy.note::2408ae28][2408ae28]]
 mod server {
     use bevy::prelude::*;
-    use gchemol_core::Molecule;
-    use gut::prelude::Result;
+    use crossbeam_channel::{bounded, Receiver};
     use tokio::runtime::Runtime;
+
+    use gchemol_core::Molecule;
 
     #[derive(Resource)]
     pub struct NetworkServer {
         /// tokio runtime
-        pub runtime: Runtime,
+        runtime: Runtime,
 
         /// handle to task that listens for new connections.
-        pub listener_task: Option<tokio::task::JoinHandle<std::result::Result<(), bevy::asset::Error>>>,
+        listener_task: Option<tokio::task::JoinHandle<Result<(), bevy::asset::Error>>>,
     }
 
     impl NetworkServer {
-        pub fn new() -> NetworkServer {
-            NetworkServer {
+        pub fn new() -> Self {
+            Self {
                 runtime: tokio::runtime::Builder::new_multi_thread()
                     .enable_all()
                     .build()
                     .expect("Could not build tokio runtime"),
                 listener_task: None,
             }
+        }
+
+        /// listen on client requests for remote view of molecule
+        pub fn listen(&mut self) -> Receiver<Molecule> {
+            let (tx, rx) = bounded::<Molecule>(1);
+            let h1 = self.runtime.spawn(super::routes::serve_remote_view(tx));
+            self.listener_task = h1.into();
+            rx
         }
 
         /// Disconnect all clients and stop listening.
@@ -184,9 +184,6 @@ impl Plugin for ServerPlugin {
             .add_startup_system(systems::setup_remote_view_service)
             .add_system(systems::read_molecule_stream)
             .add_system(systems::handle_remote_molecule_view);
-        // .add_plugin(bevy_tokio_tasks::TokioTasksPlugin::default())
-        // .add_startup_system(systems::setup_remote_view_service);
-        // .add_system(handle_remote_molecule);
     }
 }
 // 0e0418a7 ends here
