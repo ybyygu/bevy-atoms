@@ -345,16 +345,14 @@ impl Plugin for MoleculePlugin {
             }
             1 => {
                 app.add_startup_system(spawn_molecules)
-                    // .add_system(update_atom_labels)
                     .add_system(update_atom_labels_with_camera);
             }
             _ => {
-                app.add_startup_system(spawn_molecules)
-                    .add_system(update_atom_labels_with_camera)
-                    .add_system(frame_control.after(update_atom_labels_with_camera))
-                    // .add_system(create_atom_label)
-                    // .add_system(play_animation.in_base_set(PostStartup));
-                    .add_system(play_animation.after(update_atom_labels_with_camera));
+                app.add_startup_system(spawn_molecules);
+                // .add_system(frame_control.after(update_atom_labels_with_camera))
+                // .add_system(create_atom_label)
+                // .add_system(play_animation.in_base_set(PostStartup));
+                // .add_system(play_animation.after(update_atom_labels_with_camera));
             }
         }
     }
