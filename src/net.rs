@@ -1,17 +1,37 @@
 // [[file:../bevy.note::495e3d25][495e3d25]]
 use bevy::prelude::*;
+use serde::*;
 
-use gut::prelude::Result;
 use gchemol_core::Molecule;
+use gut::prelude::Result;
 // 495e3d25 ends here
 
 // [[file:../bevy.note::02dd4467][02dd4467]]
-use std::net::{SocketAddr, ToSocketAddrs};
+// Using crossbeam_channel instead of std as std `Receiver` is `!Sync`
+use crossbeam_channel::{Receiver, Sender};
+
+type RemoteCommandReceiver = Receiver<RemoteCommand>;
+type RemoteCommandSender = Sender<RemoteCommand>;
+
+fn new_channel() -> (RemoteCommandSender, RemoteCommandReceiver) {
+    crossbeam_channel::bounded(1)
+}
+
+/// Command that can be evoked from the remote client side
+#[derive(Debug, Deserialize, Serialize)]
+pub enum RemoteCommand {
+    /// Label atom
+    Label,
+    /// Delete molecule
+    Delete,
+    /// Load molecule
+    Load(Vec<Molecule>),
+}
 
 /// Settings to configure the network, both client and server
 #[derive(Resource, Default)]
 struct NetworkSettings {
-    address: Option<SocketAddr>,
+    address: Option<std::net::SocketAddr>,
 }
 // 02dd4467 ends here
 
@@ -45,6 +65,8 @@ mod app_error {
 // [[file:../bevy.note::3977bbe1][3977bbe1]]
 mod routes {
     use super::app_error::AppError;
+    use super::RemoteCommand;
+    use super::RemoteCommandSender;
     use gchemol_core::Molecule;
     use gut::prelude::Result;
 
@@ -53,14 +75,15 @@ mod routes {
     use crossbeam_channel::{Receiver, Sender};
 
     #[axum::debug_handler]
-    async fn view_molecule(State(tx): State<Sender<Molecule>>, Json(mol): Json<Molecule>) -> Result<(), AppError> {
+    async fn view_molecule(State(tx): State<RemoteCommandSender>, Json(mol): Json<Molecule>) -> Result<(), AppError> {
         super::info!("handle client request: view-molecule mol: {}", mol.title());
-        tx.send(mol).unwrap();
+        let mols = vec![mol];
+        tx.send(RemoteCommand::Load(mols)).unwrap();
         Ok(())
     }
 
     /// Start remote view service listening on molecules from remote client side.
-    pub async fn serve_remote_view(task_tx: Sender<Molecule>) -> Result<()> {
+    pub async fn serve_remote_view(task_tx: RemoteCommandSender) -> Result<()> {
         use axum::routing::post;
         use axum::{routing::get, Router};
 
@@ -78,17 +101,14 @@ mod routes {
 // [[file:../bevy.note::a39e37a0][a39e37a0]]
 mod systems {
     #![deny(warnings)]
-
     use super::server::NetworkServer;
+    use super::{RemoteCommand, RemoteCommandReceiver};
 
     use bevy::prelude::*;
-    // Using crossbeam_channel instead of std as std `Receiver` is `!Sync`
-    use crossbeam_channel::Receiver;
-    use gchemol_core::Molecule;
 
     #[derive(Resource, Deref)]
-    pub struct StreamReceiver(Receiver<Molecule>);
-    pub struct StreamEvent(Molecule);
+    pub struct StreamReceiver(RemoteCommandReceiver);
+    pub struct StreamEvent(RemoteCommand);
 
     // This system reads from the receiver and sends events to Bevy
     pub fn read_molecule_stream(receiver: Res<StreamReceiver>, mut events: EventWriter<StreamEvent>) {
@@ -106,16 +126,25 @@ mod systems {
         mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
         molecule_query: Query<Entity, With<crate::player::Molecule>>,
     ) {
-        for (_per_frame, StreamEvent(mol)) in reader.iter().enumerate() {
-            info!("handle received mol: {}", mol.title());
-            // remove existing molecule
-            if let Ok(molecule_entity) = molecule_query.get_single() {
-                info!("molecule removed");
-                commands.entity(molecule_entity).despawn_recursive();
+        for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
+            match cmd {
+                RemoteCommand::Load(mols) => {
+                    // FIXME: rewrite
+                    let mol = &mols[0];
+                    info!("handle received mol: {}", mol.title());
+                    // remove existing molecule
+                    if let Ok(molecule_entity) = molecule_query.get_single() {
+                        info!("molecule removed");
+                        commands.entity(molecule_entity).despawn_recursive();
+                    }
+                    // show molecule on received
+                    crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
+                    break;
+                }
+                _ => {
+                    //
+                }
             }
-            // show molecule on received
-            crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
-            break;
         }
     }
 
@@ -141,11 +170,11 @@ mod systems {
 
 // [[file:../bevy.note::2408ae28][2408ae28]]
 mod server {
-    use bevy::prelude::*;
-    use crossbeam_channel::{bounded, Receiver};
-    use tokio::runtime::Runtime;
+    #![deny(warnings)]
 
-    use gchemol_core::Molecule;
+    use super::{new_channel, RemoteCommandReceiver};
+    use bevy::prelude::*;
+    use tokio::runtime::Runtime;
 
     #[derive(Resource)]
     pub struct NetworkServer {
@@ -168,8 +197,8 @@ mod server {
         }
 
         /// listen on client requests for remote view of molecule
-        pub fn listen(&mut self) -> Receiver<Molecule> {
-            let (tx, rx) = bounded::<Molecule>(1);
+        pub fn listen(&mut self) -> RemoteCommandReceiver {
+            let (tx, rx) = new_channel();
             let h1 = self.runtime.spawn(super::routes::serve_remote_view(tx));
             self.listener_task = h1.into();
             rx

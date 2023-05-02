@@ -75,7 +75,7 @@ impl ViewerCli {
             .insert_resource(WinitSettings::desktop_app())
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
-            .add_plugin(crate::console::RemoteConsolePlugin)
+            .add_plugin(crate::net::ServerPlugin)
             .run();
 
         Ok(())
