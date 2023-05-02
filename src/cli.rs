@@ -31,7 +31,7 @@ fn disable_arcball_camera_in_console(console: Res<ConsoleOpen>, mut arcball_came
 fn label_command(
     mut cmd: ConsoleCommand<LabelCommand>,
     mut state: ResMut<crate::molecule::VisilizationState>,
-    mut visibility_query: Query<&mut Visibility, With<crate::molecule::AtomLabel>>,
+    mut visibility_query: Query<&mut Visibility, With<crate::ui::AtomLabel>>,
 ) {
     if let Some(Ok(LabelCommand { selection, delete })) = cmd.take() {
         reply!(cmd, "{selection:?}");

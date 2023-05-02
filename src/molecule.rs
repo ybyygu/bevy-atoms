@@ -1,4 +1,6 @@
 // [[file:../bevy.note::a83ae206][a83ae206]]
+// #![deny(warnings)]
+
 use crate::player::*;
 
 use bevy::prelude::*;
@@ -90,19 +92,6 @@ fn setup_lights(commands: &mut Commands) {
 // b93672bb ends here
 
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
-#[derive(Resource, Clone, Debug)]
-pub struct Molecule {
-    inner: gchemol_core::Molecule,
-}
-
-impl Default for Molecule {
-    fn default() -> Self {
-        let mut inner = gchemol_core::Molecule::from_database("CH4");
-        inner.rebond();
-        Self { inner }
-    }
-}
-
 #[derive(Resource, Clone, Debug, Default)]
 struct CurrentFrame(isize);
 
@@ -117,120 +106,6 @@ pub struct VisilizationState {
     pub display_label: bool,
 }
 // c068ff9c ends here
-
-// [[file:../bevy.note::bb92e200][bb92e200]]
-fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
-    let p = p.into();
-    Vec3::new(p[0] as f32, p[1] as f32, p[2] as f32)
-}
-
-fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f32) {
-    let p0 = lat.to_cart([0.0, 0.0, 0.0]);
-    let p1 = lat.to_cart([1.0, 0.0, 0.0]);
-    let p2 = lat.to_cart([0.0, 1.0, 0.0]);
-    let p3 = lat.to_cart([0.0, 0.0, 1.0]);
-    let p4 = lat.to_cart([1.0, 1.0, 0.0]);
-    let p5 = lat.to_cart([1.0, 0.0, 1.0]);
-    let p6 = lat.to_cart([0.0, 1.0, 1.0]);
-    let p7 = lat.to_cart([1.0, 1.0, 1.0]);
-    let p0 = as_vec3(p0);
-    let p1 = as_vec3(p1);
-    let p2 = as_vec3(p2);
-    let p3 = as_vec3(p3);
-    let p4 = as_vec3(p4);
-    let p5 = as_vec3(p5);
-    let p6 = as_vec3(p6);
-    let p7 = as_vec3(p7);
-    lines.line_colored(p0, p1, duration, Color::RED);
-    lines.line_colored(p0, p2, duration, Color::YELLOW);
-    lines.line_colored(p0, p3, duration, Color::BLUE);
-    lines.line_colored(p1, p4, duration, Color::WHITE);
-    lines.line_colored(p1, p5, duration, Color::WHITE);
-    lines.line_colored(p2, p4, duration, Color::WHITE);
-    lines.line_colored(p2, p6, duration, Color::WHITE);
-    lines.line_colored(p3, p5, duration, Color::WHITE);
-    lines.line_colored(p3, p6, duration, Color::WHITE);
-    lines.line_colored(p7, p4, duration, Color::WHITE);
-    lines.line_colored(p7, p5, duration, Color::WHITE);
-    lines.line_colored(p7, p6, duration, Color::WHITE);
-}
-// bb92e200 ends here
-
-// [[file:../bevy.note::8139ae6a][8139ae6a]]
-#[derive(Component)]
-pub struct AtomLabel {
-    entity: Entity,
-    offset: Vec3,
-}
-
-impl AtomLabel {
-    pub fn new(entity: Entity) -> Self {
-        Self {
-            entity,
-            offset: Vec3::ZERO,
-        }
-    }
-
-    pub fn with_offset(mut self, offset: Vec3) -> Self {
-        self.offset = offset;
-        self
-    }
-}
-
-fn create_label(asset_server: &Res<AssetServer>, text: String, visible: bool) -> TextBundle {
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    let style = Style {
-        position_type: PositionType::Absolute,
-        position: UiRect {
-            // top: Val::Px(50.),
-            // right: Val::Px(15.0),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-
-    let mut text = TextBundle::from_section(
-        text,
-        TextStyle {
-            font: font.clone(),
-            font_size: 14.0,
-            ..default()
-        },
-    )
-    .with_text_alignment(TextAlignment::Center)
-    .with_style(style);
-
-    let visibility = if visible { Visibility::Visible } else { Visibility::Hidden };
-    text.visibility = visibility;
-    text
-}
-
-fn update_atom_labels_with_camera(
-    camera_query: Query<(&Camera, &GlobalTransform)>,
-    mut label_style_query: Query<(&AtomLabel, &mut Style, &CalculatedSize, &ComputedVisibility)>,
-    transform_query: Query<&Transform>,
-    windows: Query<&Window>,
-) {
-    let (camera, camera_transform) = camera_query.single();
-
-    let window = windows.single();
-    for (label, mut style, calc_size, visibility) in &mut label_style_query {
-        if visibility.is_visible() {
-            let label_size = calc_size.size;
-            if let Ok(atom_transform) = transform_query.get(label.entity) {
-                let atom_position = atom_transform.translation;
-                if let Some(screen_position) = camera.world_to_viewport(camera_transform, atom_position) {
-                    style.position.left = Val::Px(screen_position.x - label_size.x * 0.5 + label.offset.x);
-                    style.position.top = Val::Px(window.height() - (screen_position.y + label_size.y * 0.5 + label.offset.y));
-                } else {
-                    // A hack to hide the text when the it's behind the camera
-                    style.position.bottom = Val::Px(-1000.0);
-                }
-            }
-        }
-    }
-}
-// 8139ae6a ends here
 
 // [[file:../bevy.note::20198b2d][20198b2d]]
 fn play_animation(
@@ -328,7 +203,6 @@ impl MoleculePlugin {
 
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
-        use bevy::app::StartupSet::PostStartup;
         use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
         app.insert_resource(self.traj.clone())
@@ -345,7 +219,7 @@ impl Plugin for MoleculePlugin {
             }
             1 => {
                 app.add_startup_system(spawn_molecules)
-                    .add_system(update_atom_labels_with_camera);
+                    .add_system(crate::ui::update_atom_labels_with_camera);
             }
             _ => {
                 app.add_startup_system(spawn_molecules);

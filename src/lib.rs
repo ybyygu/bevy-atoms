@@ -10,6 +10,7 @@
 // mod menu;
 mod net;
 mod player;
+mod ui;
 // mod task;
 
 #[cfg(not(target_arch = "wasm32"))]
