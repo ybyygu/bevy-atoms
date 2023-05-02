@@ -110,7 +110,7 @@ mod routes {
 mod systems {
     #![deny(warnings)]
     use super::server::NetworkServer;
-    use super::{RemoteCommand, StreamEvent, StreamReceiver};
+    use super::{StreamEvent, StreamReceiver};
 
     use bevy::prelude::*;
 
@@ -119,36 +119,6 @@ mod systems {
         for from_stream in receiver.try_iter() {
             info!("get mol event");
             events.send(StreamEvent(from_stream));
-        }
-    }
-
-    pub fn handle_remote_molecule_view(
-        mut reader: EventReader<StreamEvent>,
-        mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<StandardMaterial>>,
-        mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
-        molecule_query: Query<Entity, With<crate::player::Molecule>>,
-    ) {
-        for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
-            match cmd {
-                RemoteCommand::Load(mols) => {
-                    // FIXME: rewrite
-                    let mol = &mols[0];
-                    info!("handle received mol: {}", mol.title());
-                    // remove existing molecule
-                    if let Ok(molecule_entity) = molecule_query.get_single() {
-                        info!("molecule removed");
-                        commands.entity(molecule_entity).despawn_recursive();
-                    }
-                    // show molecule on received
-                    crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
-                    break;
-                }
-                _ => {
-                    //
-                }
-            }
         }
     }
 
@@ -227,11 +197,12 @@ pub struct ServerPlugin;
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(NetworkSettings::default())
+            .add_plugin(console::RemoteConsolePlugin)
             .add_event::<StreamEvent>()
             .add_startup_system(systems::setup_remote_view_service)
             .add_system(systems::read_molecule_stream)
-            .add_system(systems::stop_server_on_exit)
-            .add_system(systems::handle_remote_molecule_view);
+            .add_system(systems::stop_server_on_exit);
+        // .add_system(systems::handle_remote_molecule_view);
     }
 }
 // 0e0418a7 ends here
