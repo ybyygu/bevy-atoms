@@ -75,7 +75,7 @@ impl ViewerCli {
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
             .add_plugin(mol_plugin)
-            // .add_plugin(crate::console::CmdConsolePlugin)
+            .add_plugin(crate::console::RemoteConsolePlugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .run();
 

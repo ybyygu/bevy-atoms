@@ -113,49 +113,7 @@ fn handle_atom_label_events(
 }
 // f1cac934 ends here
 
-// [[file:../bevy.note::5597720a][5597720a]]
-mod command {
-    use super::*;
-    use gut::cli::*;
-
-    use bevy_console::{reply, ConsoleCommand};
-
-    /// Label atoms with serial number or element symbols
-    #[derive(Parser, ConsoleCommand)]
-    #[command(name = "label")]
-    pub struct LabelCommand {
-        /// Atoms to be selected. If not set, all atoms will be selected.
-        selection: Option<String>,
-
-        /// Delete atom labels
-        #[arg(short, long)]
-        delete: bool,
-    }
-
-    pub fn label_command(
-        mut cmd: ConsoleCommand<LabelCommand>,
-        mut label_events: EventWriter<AtomLabelEvent>,
-        mut atoms_query: Query<Entity, With<crate::player::Atom>>,
-    ) {
-        if let Some(Ok(LabelCommand { selection, delete })) = cmd.take() {
-            reply!(cmd, "{selection:?}");
-            for entity in atoms_query.iter() {
-                if delete {
-                    label_events.send(AtomLabelEvent::Delete(entity));
-                } else {
-                    label_events.send(AtomLabelEvent::Create((entity, "text".to_owned())));
-                }
-            }
-
-            cmd.ok();
-        }
-    }
-}
-// 5597720a ends here
-
 // [[file:../bevy.note::f9bfb184][f9bfb184]]
-pub use command::*;
-
 #[derive(Debug, Clone, Default)]
 pub struct LabelPlugin {
     //
@@ -163,7 +121,7 @@ pub struct LabelPlugin {
 
 impl Plugin for LabelPlugin {
     fn build(&self, app: &mut App) {
-        use bevy_console::AddConsoleCommand;
+        // use bevy_console::AddConsoleCommand;
 
         app.add_event::<AtomLabelEvent>()
             // .add_console_command::<LabelCommand, _>(label_command)
