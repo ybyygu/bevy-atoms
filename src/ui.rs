@@ -166,7 +166,7 @@ impl Plugin for LabelPlugin {
         use bevy_console::AddConsoleCommand;
 
         app.add_event::<AtomLabelEvent>()
-            .add_console_command::<LabelCommand, _>(label_command)
+            // .add_console_command::<LabelCommand, _>(label_command)
             .add_system(update_atom_labels_with_camera);
     }
 }

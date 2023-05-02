@@ -4,42 +4,6 @@ use gut::fs::*;
 use gut::prelude::Result;
 // ff77face ends here
 
-// [[file:../bevy.note::101c2ae1][101c2ae1]]
-use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
-use bevy_console::{ConsoleConfiguration, ConsolePlugin, ConsoleSet};
-
-use bevy_console::{ConsoleOpen, PrintConsoleLine};
-use bevy_panorbit_camera::PanOrbitCamera;
-fn disable_arcball_camera_in_console(console: Res<ConsoleOpen>, mut arcball_camera_query: Query<&mut PanOrbitCamera>) {
-    if let Ok(mut arcball_camera) = arcball_camera_query.get_single_mut() {
-        arcball_camera.enabled = !console.open;
-    }
-}
-// 101c2ae1 ends here
-
-// [[file:../bevy.note::22cddf8a][22cddf8a]]
-/// Delete molecule
-#[derive(Parser, ConsoleCommand)]
-#[command(name = "delete")]
-struct DeleteCommand {
-    //
-}
-
-fn delete_command(
-    mut commands: Commands,
-    mut cmd: ConsoleCommand<DeleteCommand>,
-    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
-) {
-    if let Some(Ok(DeleteCommand {})) = cmd.take() {
-        if let Ok(molecule_entity) = molecule_query.get_single() {
-            info!("remove molecule");
-            commands.entity(molecule_entity).despawn_recursive();
-            cmd.ok();
-        }
-    }
-}
-// 22cddf8a ends here
-
 // [[file:../bevy.note::49c1ea76][49c1ea76]]
 use gchemol::prelude::*;
 use gchemol::Molecule;
@@ -110,15 +74,9 @@ impl ViewerCli {
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
-            .add_plugin(ConsolePlugin)
-            .insert_resource(ConsoleConfiguration {
-                // override config here
-                ..Default::default()
-            })
             .add_plugin(mol_plugin)
+            // .add_plugin(crate::console::CmdConsolePlugin)
             .add_plugin(crate::ui::LabelPlugin::default())
-            .add_console_command::<DeleteCommand, _>(delete_command)
-            .add_system(disable_arcball_camera_in_console.after(ConsoleSet::ConsoleUI))
             .run();
 
         Ok(())

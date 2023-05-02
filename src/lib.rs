@@ -8,6 +8,7 @@
 // mod camera;
 // mod loading;
 // mod menu;
+mod console;
 mod net;
 mod player;
 mod ui;

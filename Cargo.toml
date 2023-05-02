@@ -56,10 +56,7 @@ console_error_panic_hook = "0.1"
 bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 lerp = "0.4.0"                                                         # for camera
 bevy_console = "0.7.0"                                                 # command line UI
-# bevy_panorbit_camera = { version = "0.2.0", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
-# bevy_panorbit_camera = { version = "0.4.1", git = "https://github.com/Plonq/bevy_panorbit_camera" }
-# FIXME: there are some issues in bevy_panorbit_camera/bevy_egui that make molecule invisible
-# bevy_panorbit_camera = { features = ["bevy_egui"], path = "/home/ybyygu/Incoming/repos/bevy_panorbit_camera/" }
+# bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
 bevy_panorbit_camera = { version = "0.4.1" }
 
 gut = { version = "0.4.4", package = "gchemol-gut" }
