@@ -49,6 +49,29 @@ fn label_command(
 }
 // 101c2ae1 ends here
 
+// [[file:../bevy.note::22cddf8a][22cddf8a]]
+/// Delete molecule
+#[derive(Parser, ConsoleCommand)]
+#[command(name = "delete")]
+struct DeleteCommand {
+    //
+}
+
+fn delete_command(
+    mut commands: Commands,
+    mut cmd: ConsoleCommand<DeleteCommand>,
+    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+) {
+    if let Some(Ok(DeleteCommand {})) = cmd.take() {
+        if let Ok(molecule_entity) = molecule_query.get_single() {
+            info!("remove molecule");
+            commands.entity(molecule_entity).despawn_recursive();
+            cmd.ok();
+        }
+    }
+}
+// 22cddf8a ends here
+
 // [[file:../bevy.note::49c1ea76][49c1ea76]]
 use gchemol::prelude::*;
 use gchemol::Molecule;
@@ -67,13 +90,27 @@ use bevy_mod_picking::DefaultPickingPlugins;
 pub struct ViewerCli {
     /// path to molecule to compute
     molfile: PathBuf,
+
+    #[arg(long)]
+    /// Client side only (ad-hoc)
+    client: bool,
 }
 
 impl ViewerCli {
     pub fn enter_main() -> Result<()> {
         let args = Self::parse();
 
+        // FIXME: remove when net ready
+        if args.client {
+            let mol = gchemol::Molecule::from_file(&args.molfile)?;
+            let client = reqwest::blocking::Client::builder().build().expect("reqwest client");
+            let uri = format!("http://{}/view-molecule", "127.0.0.1:3039");
+            let resp = client.post(&uri).json(&mol).send()?.text()?;
+            dbg!(resp);
+            return Ok(());
+        }
         let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
+
         // FIXME: should be refactored when UI is ready
         for mol in mols.iter_mut() {
             let lat = mol.unbuild_crystal();
@@ -101,6 +138,7 @@ impl ViewerCli {
             )
             // .add_plugin(crate::GamePlugin)
             // .add_plugin(EguiPlugin)
+            .add_plugin(crate::net::ServerPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
@@ -111,6 +149,7 @@ impl ViewerCli {
             })
             .add_plugin(mol_plugin)
             .add_console_command::<LabelCommand, _>(label_command)
+            .add_console_command::<DeleteCommand, _>(delete_command)
             .add_system(disable_arcball_camera_in_console.after(ConsoleSet::ConsoleUI))
             .run();
 

@@ -26,6 +26,7 @@ fn main() {
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(mol_plugin)
+        .add_plugin(net::ServerPlugin)
         .run();
 }
 

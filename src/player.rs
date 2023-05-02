@@ -139,8 +139,6 @@ fn get_atom_color(atom: &gchemol_core::Atom) -> Color {
 // [[file:../bevy.note::0b92cef9][0b92cef9]]
 #[derive(Clone, Debug, Component)]
 pub struct Atom {
-    // symbol: String,
-    // label: String,
     color: Color,
     radius: f32,
     position: Vec3,
@@ -166,17 +164,10 @@ impl Atom {
     }
 }
 
-#[derive(Component)]
-enum AtomLabel {
-    None,
-    Text(TextBundle),
-}
-
 #[derive(Bundle)]
 pub struct AtomBundle {
     pbr: PbrBundle,
     atom: Atom,
-    label: AtomLabel, // cannot use Option<TextBundle> here for Bundle trait constraint
 }
 
 impl AtomBundle {
@@ -195,7 +186,7 @@ impl AtomBundle {
                 ..default()
             },
             atom,
-            label: AtomLabel::None,
+            // label: AtomLabel::None,
         }
     }
 
@@ -264,3 +255,93 @@ impl BondBundle {
     }
 }
 // 5a5c8b3f ends here
+
+// [[file:../bevy.note::3b90f445][3b90f445]]
+#[derive(Clone, Debug, Component)]
+pub struct Molecule;
+// 3b90f445 ends here
+
+// [[file:../bevy.note::e6728461][e6728461]]
+use bevy_prototype_debug_lines::DebugLines;
+
+fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
+    let p = p.into();
+    Vec3::new(p[0] as f32, p[1] as f32, p[2] as f32)
+}
+
+fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f32) {
+    let p0 = lat.to_cart([0.0, 0.0, 0.0]);
+    let p1 = lat.to_cart([1.0, 0.0, 0.0]);
+    let p2 = lat.to_cart([0.0, 1.0, 0.0]);
+    let p3 = lat.to_cart([0.0, 0.0, 1.0]);
+    let p4 = lat.to_cart([1.0, 1.0, 0.0]);
+    let p5 = lat.to_cart([1.0, 0.0, 1.0]);
+    let p6 = lat.to_cart([0.0, 1.0, 1.0]);
+    let p7 = lat.to_cart([1.0, 1.0, 1.0]);
+    let p0 = as_vec3(p0);
+    let p1 = as_vec3(p1);
+    let p2 = as_vec3(p2);
+    let p3 = as_vec3(p3);
+    let p4 = as_vec3(p4);
+    let p5 = as_vec3(p5);
+    let p6 = as_vec3(p6);
+    let p7 = as_vec3(p7);
+    lines.line_colored(p0, p1, duration, Color::RED);
+    lines.line_colored(p0, p2, duration, Color::YELLOW);
+    lines.line_colored(p0, p3, duration, Color::BLUE);
+    lines.line_colored(p1, p4, duration, Color::WHITE);
+    lines.line_colored(p1, p5, duration, Color::WHITE);
+    lines.line_colored(p2, p4, duration, Color::WHITE);
+    lines.line_colored(p2, p6, duration, Color::WHITE);
+    lines.line_colored(p3, p5, duration, Color::WHITE);
+    lines.line_colored(p3, p6, duration, Color::WHITE);
+    lines.line_colored(p7, p4, duration, Color::WHITE);
+    lines.line_colored(p7, p5, duration, Color::WHITE);
+    lines.line_colored(p7, p6, duration, Color::WHITE);
+}
+// e6728461 ends here
+
+// [[file:../bevy.note::d5c13162][d5c13162]]
+#[derive(Clone, Copy, Debug, Component)]
+pub struct FrameIndex(pub usize);
+
+pub fn spawn_molecule(
+    mol: &gchemol_core::Molecule,
+    visible: bool,
+    frame_index: usize,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<StandardMaterial>>,
+    mut lines: &mut ResMut<DebugLines>,
+) {
+    commands
+        .spawn(SpatialBundle::default())
+        .insert(Molecule)
+        .insert(FrameIndex(frame_index))
+        .with_children(|commands| {
+            // spawn atoms
+            for (i, a) in mol.atoms() {
+                let mut atom = Atom::new(a);
+                atom.set_visible(visible);
+                let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
+                commands.spawn(atom_bundle);
+            }
+
+            // add chemical bonds
+            for (i, j, b) in mol.bonds() {
+                let ai = mol.get_atom_unchecked(i);
+                let aj = mol.get_atom_unchecked(j);
+                let atom1 = Atom::new(ai);
+                let atom2 = Atom::new(aj);
+                let mut bond = Bond::new(atom1, atom2);
+                bond.set_visible(visible);
+                commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials));
+            }
+
+            // lattice
+            if let Some(lat) = mol.get_lattice() {
+                show_lattice(lat, &mut lines, f32::MAX);
+            }
+        });
+}
+// d5c13162 ends here
