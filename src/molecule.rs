@@ -218,8 +218,8 @@ impl Plugin for MoleculePlugin {
                 eprintln!("No molecule loaded!");
             }
             1 => {
-                app.add_startup_system(spawn_molecules)
-                    .add_system(crate::ui::update_atom_labels_with_camera);
+                app.add_startup_system(spawn_molecules);
+                // .add_system(crate::ui::update_atom_labels_with_camera);
             }
             _ => {
                 app.add_startup_system(spawn_molecules);

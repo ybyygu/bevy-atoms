@@ -8,43 +8,11 @@ use gut::prelude::Result;
 use bevy_console::{reply, AddConsoleCommand, ConsoleCommand};
 use bevy_console::{ConsoleConfiguration, ConsolePlugin, ConsoleSet};
 
-/// Label atoms with serial number or element symbols
-#[derive(Parser, ConsoleCommand)]
-#[command(name = "label")]
-struct LabelCommand {
-    /// Atoms to be selected. If not set, all atoms will be selected.
-    selection: Option<String>,
-
-    /// Delete atom labels
-    #[arg(short, long)]
-    delete: bool,
-}
-
 use bevy_console::{ConsoleOpen, PrintConsoleLine};
 use bevy_panorbit_camera::PanOrbitCamera;
 fn disable_arcball_camera_in_console(console: Res<ConsoleOpen>, mut arcball_camera_query: Query<&mut PanOrbitCamera>) {
     if let Ok(mut arcball_camera) = arcball_camera_query.get_single_mut() {
         arcball_camera.enabled = !console.open;
-    }
-}
-
-fn label_command(
-    mut cmd: ConsoleCommand<LabelCommand>,
-    mut state: ResMut<crate::molecule::VisilizationState>,
-    mut visibility_query: Query<&mut Visibility, With<crate::ui::AtomLabel>>,
-) {
-    if let Some(Ok(LabelCommand { selection, delete })) = cmd.take() {
-        reply!(cmd, "{selection:?}");
-        state.display_label = !delete;
-        for mut visibility in &mut visibility_query {
-            if delete {
-                *visibility = Visibility::Hidden;
-            } else {
-                *visibility = Visibility::Visible;
-            }
-        }
-
-        cmd.ok();
     }
 }
 // 101c2ae1 ends here
@@ -148,7 +116,7 @@ impl ViewerCli {
                 ..Default::default()
             })
             .add_plugin(mol_plugin)
-            .add_console_command::<LabelCommand, _>(label_command)
+            .add_plugin(crate::ui::LabelPlugin::default())
             .add_console_command::<DeleteCommand, _>(delete_command)
             .add_system(disable_arcball_camera_in_console.after(ConsoleSet::ConsoleUI))
             .run();
