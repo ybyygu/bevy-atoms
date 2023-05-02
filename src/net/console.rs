@@ -1,4 +1,4 @@
-// [[file:../bevy.note::6c039888][6c039888]]
+// [[file:../../bevy.note::6c039888][6c039888]]
 // #![deny(warnings)]
 #![deny(clippy::all)]
 
@@ -9,11 +9,11 @@ use bevy::prelude::*;
 // use gut::cli::*;
 // 6c039888 ends here
 
-// [[file:../bevy.note::d66e839e][d66e839e]]
+// [[file:../../bevy.note::d66e839e][d66e839e]]
 pub struct RemoteConsolePlugin;
 // d66e839e ends here
 
-// [[file:../bevy.note::3d0c7156][3d0c7156]]
+// [[file:../../bevy.note::3d0c7156][3d0c7156]]
 impl Plugin for RemoteConsolePlugin {
     fn build(&self, app: &mut App) {
         // app.add_plugin(ServerPlugin);

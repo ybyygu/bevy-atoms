@@ -6,6 +6,10 @@ use gchemol_core::Molecule;
 use gut::prelude::Result;
 // 495e3d25 ends here
 
+// [[file:../bevy.note::e05220eb][e05220eb]]
+mod console;
+// e05220eb ends here
+
 // [[file:../bevy.note::02dd4467][02dd4467]]
 // Using crossbeam_channel instead of std as std `Receiver` is `!Sync`
 use crossbeam_channel::{Receiver, Sender};
