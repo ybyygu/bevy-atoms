@@ -17,6 +17,10 @@ use crossbeam_channel::{Receiver, Sender};
 type RemoteCommandReceiver = Receiver<RemoteCommand>;
 type RemoteCommandSender = Sender<RemoteCommand>;
 
+#[derive(Resource, Deref)]
+pub struct StreamReceiver(RemoteCommandReceiver);
+pub struct StreamEvent(RemoteCommand);
+
 fn new_channel() -> (RemoteCommandSender, RemoteCommandReceiver) {
     crossbeam_channel::bounded(1)
 }
@@ -106,13 +110,9 @@ mod routes {
 mod systems {
     #![deny(warnings)]
     use super::server::NetworkServer;
-    use super::{RemoteCommand, RemoteCommandReceiver};
+    use super::{RemoteCommand, StreamEvent, StreamReceiver};
 
     use bevy::prelude::*;
-
-    #[derive(Resource, Deref)]
-    pub struct StreamReceiver(RemoteCommandReceiver);
-    pub struct StreamEvent(RemoteCommand);
 
     // This system reads from the receiver and sends events to Bevy
     pub fn read_molecule_stream(receiver: Res<StreamReceiver>, mut events: EventWriter<StreamEvent>) {
@@ -227,7 +227,7 @@ pub struct ServerPlugin;
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(NetworkSettings::default())
-            .add_event::<systems::StreamEvent>()
+            .add_event::<StreamEvent>()
             .add_startup_system(systems::setup_remote_view_service)
             .add_system(systems::read_molecule_stream)
             .add_system(systems::stop_server_on_exit)
