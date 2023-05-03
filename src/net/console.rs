@@ -63,16 +63,24 @@ fn load_command(
 // 09fa2046 ends here
 
 // [[file:../../bevy.note::d6420d3f][d6420d3f]]
+use crate::player::AtomIndex;
+use crate::ui::AtomLabelEvent;
+
 fn label_command(
-    mut commands: Commands,
-    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
     mut reader: EventReader<StreamEvent>,
+    mut label_events: EventWriter<AtomLabelEvent>,
+    mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
-        if let RemoteCommand::Label = cmd {
-            if let Ok(molecule_entity) = molecule_query.get_single() {
-                info!("remove molecule");
-                commands.entity(molecule_entity).despawn_recursive();
+        if let RemoteCommand::Label { delete } = cmd {
+            for (entity, atom_index) in atoms_query.iter() {
+                if *delete {
+                    info!("delete atom labels ...");
+                    label_events.send(AtomLabelEvent::Delete(entity));
+                } else {
+                    info!("create atom labels ...");
+                    label_events.send(AtomLabelEvent::Create((entity, format!("{}", atom_index.0))));
+                }
             }
         }
     }

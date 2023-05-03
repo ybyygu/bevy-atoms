@@ -29,7 +29,7 @@ fn new_channel() -> (RemoteCommandSender, RemoteCommandReceiver) {
 #[derive(Debug, Deserialize, Serialize)]
 pub enum RemoteCommand {
     /// Label atom
-    Label,
+    Label { delete: bool },
     /// Delete molecule
     Delete,
     /// Load molecule
@@ -100,7 +100,7 @@ mod routes {
     #[axum::debug_handler]
     async fn label_atoms(State(tx): State<RemoteCommandSender>) -> Result<(), AppError> {
         super::info!("handle client request: label atoms");
-        tx.send(RemoteCommand::Label).unwrap();
+        tx.send(RemoteCommand::Label { delete: false }).unwrap();
         Ok(())
     }
 
