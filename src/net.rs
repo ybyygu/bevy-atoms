@@ -90,13 +90,31 @@ mod routes {
         Ok(())
     }
 
+    #[axum::debug_handler]
+    async fn delete_molecule(State(tx): State<RemoteCommandSender>) -> Result<(), AppError> {
+        super::info!("handle client request: delete molecule");
+        tx.send(RemoteCommand::Delete).unwrap();
+        Ok(())
+    }
+
+    #[axum::debug_handler]
+    async fn label_atoms(State(tx): State<RemoteCommandSender>) -> Result<(), AppError> {
+        super::info!("handle client request: label atoms");
+        tx.send(RemoteCommand::Label).unwrap();
+        Ok(())
+    }
+
     /// Start remote view service listening on molecules from remote client side.
     pub async fn serve_remote_view(task_tx: RemoteCommandSender) -> Result<()> {
         use axum::routing::post;
         use axum::{routing::get, Router};
 
         super::info!("start axum service ...");
-        let app = Router::new().route("/view-molecule", post(view_molecule)).with_state(task_tx);
+        let app = Router::new()
+            .route("/view-molecule", post(view_molecule))
+            .route("/delete-molecule", post(delete_molecule))
+            .route("/label-atoms", post(label_atoms))
+            .with_state(task_tx);
         axum::Server::bind(&"127.0.0.1:3039".parse().unwrap())
             .serve(app.into_make_service())
             .await?;

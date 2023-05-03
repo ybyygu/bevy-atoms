@@ -62,11 +62,29 @@ fn load_command(
 }
 // 09fa2046 ends here
 
+// [[file:../../bevy.note::d6420d3f][d6420d3f]]
+fn label_command(
+    mut commands: Commands,
+    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    mut reader: EventReader<StreamEvent>,
+) {
+    for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
+        if let RemoteCommand::Label = cmd {
+            if let Ok(molecule_entity) = molecule_query.get_single() {
+                info!("remove molecule");
+                commands.entity(molecule_entity).despawn_recursive();
+            }
+        }
+    }
+}
+// d6420d3f ends here
+
 // [[file:../../bevy.note::3d0c7156][3d0c7156]]
 impl Plugin for RemoteConsolePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(delete_command).add_system(load_command);
-        //
+        app.add_system(delete_command)
+            .add_system(load_command)
+            .add_system(label_command);
     }
 }
 // 3d0c7156 ends here

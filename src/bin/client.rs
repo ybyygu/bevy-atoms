@@ -36,6 +36,7 @@ struct Load {
 
 #[derive(Parser)]
 #[command(name = "connect")]
+/// Connect to gchemol-view server
 struct Connect {
     #[arg(default_value = "127.0.0.1:3039")]
     server: String,
@@ -69,6 +70,51 @@ fn load(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
 }
 // cb0b9648 ends here
 
+// [[file:../../bevy.note::55de8bbc][55de8bbc]]
+#[derive(Parser)]
+#[command(name = "label")]
+/// Label atoms with their serial numbers
+struct Label {
+    #[arg(short, long)]
+    delete: bool,
+}
+
+fn label(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
+    let delete_label = args.get_one::<bool>("delete");
+
+    // FIXME: remove unwrap
+    if let Some(client) = context.client.as_mut() {
+        let server = &context.server;
+        let uri = format!("http://{server}/label-atoms");
+        let resp = client.post(&uri).send().unwrap().text().unwrap();
+        Ok(Some(format!("serve resp: {resp}")))
+    } else {
+        Ok(Some(format!("invalid")))
+    }
+}
+// 55de8bbc ends here
+
+// [[file:../../bevy.note::e3d61698][e3d61698]]
+#[derive(Parser)]
+#[command(name = "delete")]
+/// Delete current molecule
+struct Delete {
+    //
+}
+
+fn delete(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
+    // FIXME: remove unwrap
+    if let Some(client) = context.client.as_mut() {
+        let server = &context.server;
+        let uri = format!("http://{server}/delete-molecule");
+        let resp = client.post(&uri).send().unwrap().text().unwrap();
+        Ok(Some(format!("serve resp: {resp}")))
+    } else {
+        Ok(Some(format!("invalid")))
+    }
+}
+// e3d61698 ends here
+
 // [[file:../../bevy.note::7a8f9dd7][7a8f9dd7]]
 /// Prepend name to list
 fn main() -> Result<()> {
@@ -78,7 +124,9 @@ fn main() -> Result<()> {
         .with_description("A simple molecule viewer")
         .with_banner("Welcome to gchemol-view")
         .with_command(Connect::command(), connect)
-        .with_command(Load::command(), load);
+        .with_command(Load::command(), load)
+        .with_command(Label::command(), label)
+        .with_command(Delete::command(), delete);
 
     repl.run()
 }
