@@ -117,7 +117,7 @@ mod systems {
     // This system reads from the receiver and sends events to Bevy
     pub fn read_molecule_stream(receiver: Res<StreamReceiver>, mut events: EventWriter<StreamEvent>) {
         for from_stream in receiver.try_iter() {
-            info!("get mol event");
+            debug!("got remote cmd event");
             events.send(StreamEvent(from_stream));
         }
     }
@@ -135,6 +135,7 @@ mod systems {
 
     pub fn stop_server_on_exit(mut exit_events: EventReader<bevy::app::AppExit>, mut server: ResMut<NetworkServer>) {
         for _ in exit_events.iter() {
+            info!("Stopping background server ...");
             server.stop();
             break;
         }
