@@ -114,6 +114,19 @@ fn handle_atom_label_events(
 }
 // f1cac934 ends here
 
+// [[file:../bevy.note::bccb8119][bccb8119]]
+mod menu {
+    use bevy::prelude::*;
+    use bevy_egui::{egui, EguiContexts, EguiPlugin};
+
+    pub fn example_system(mut contexts: EguiContexts) {
+        egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
+            ui.label("world");
+        });
+    }
+}
+// bccb8119 ends here
+
 // [[file:../bevy.note::f9bfb184][f9bfb184]]
 #[derive(Debug, Clone, Default)]
 pub struct LabelPlugin {
@@ -122,7 +135,11 @@ pub struct LabelPlugin {
 
 impl Plugin for LabelPlugin {
     fn build(&self, app: &mut App) {
+        use bevy_egui::EguiPlugin;
+
         app.add_event::<AtomLabelEvent>()
+            .add_plugin(EguiPlugin)
+            .add_system(menu::example_system)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
     }
