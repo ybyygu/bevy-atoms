@@ -62,6 +62,8 @@ impl ViewerCli {
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
+            .add_system(bevy::window::close_on_esc)
+            .add_system(bevy::window::exit_on_primary_closed)
             .run();
 
         Ok(())
