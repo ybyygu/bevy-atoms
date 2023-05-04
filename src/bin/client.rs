@@ -1,22 +1,73 @@
 // [[file:../../bevy.note::d351781a][d351781a]]
-use clap::CommandFactory;
-use clap::{Parser, Subcommand};
-use reedline_repl_rs::clap::{Arg, ArgMatches, Command};
-use reedline_repl_rs::{Repl, Result};
+use gut::cli::*;
+use gut::prelude::*;
 
 use gchemol::prelude::*;
 use gchemol::Molecule;
+use gosh_repl::{Actionable, Interpreter};
 // d351781a ends here
 
-// [[file:../../bevy.note::cb0b9648][cb0b9648]]
+// [[file:../../bevy.note::88699612][88699612]]
+#[derive(Parser, Debug)]
+#[clap(disable_help_subcommand = true)]
+enum Cmd {
+    /// Quit shell.
+    #[command(name = "quit", alias = "q", alias = "exit")]
+    Quit {},
+
+    /// Show available commands.
+    #[command(name = "help", alias = "h", alias = "?")]
+    Help {},
+
+    /// Load molecule for remote view
+    #[command(name = "load")]
+    Load {
+        #[clap(name = "FILENAME")]
+        molfile: String,
+    },
+
+    /// Connect to gchemol-view server
+    #[command(name = "connect")]
+    Connect {
+        #[arg(default_value = "127.0.0.1:3039")]
+        server: String,
+    },
+
+    #[command(name = "label")]
+    /// Label atoms with their serial numbers
+    Label {
+        #[arg(short, long)]
+        delete: bool,
+    },
+
+    #[command(name = "delete")]
+    /// Delete current molecule
+    Delete {
+        //
+    },
+}
+// 88699612 ends here
+
+// [[file:../../bevy.note::a252f98f][a252f98f]]
 use reqwest::blocking::Client;
 
-struct Context {
+#[derive(Debug, Clone)]
+struct Action {
     client: Option<Client>,
     server: String,
 }
 
-impl Default for Context {
+impl Action {
+    fn client(&mut self) -> Result<&mut Client> {
+        if let Some(client) = self.client.as_mut() {
+            Ok(client)
+        } else {
+            bail!("not connected yet")
+        }
+    }
+}
+
+impl Default for Action {
     fn default() -> Self {
         let client = reqwest::blocking::Client::builder().build().expect("reqwest client");
 
@@ -27,107 +78,76 @@ impl Default for Context {
     }
 }
 
-#[derive(Parser)]
-#[command(name = "load")]
-/// Load molecule for remote view
-struct Load {
-    molfile: String,
-}
+impl Actionable for Action {
+    type Command = Cmd;
 
-#[derive(Parser)]
-#[command(name = "connect")]
-/// Connect to gchemol-view server
-struct Connect {
-    #[arg(default_value = "127.0.0.1:3039")]
-    server: String,
-}
-
-fn connect(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
-    if let Some(server) = args.get_one::<String>("server") {
-        context.server = server.to_owned();
-        Ok(Some(format!("connect to {server}")))
-    } else {
-        Ok(Some(format!("invalid")))
+    /// parse REPL commands from shell line input using clap
+    fn try_parse_from<I, T>(iter: I) -> Result<Self::Command>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<std::ffi::OsString> + Clone,
+    {
+        let r = Cmd::try_parse_from(iter)?;
+        Ok(r)
     }
-}
 
-/// Write "Hello" with given name
-fn load(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
-    // FIXME: remove unwrap
-    if let Some(molfile) = args.get_one::<String>("molfile") {
-        if let Some(client) = context.client.as_mut() {
-            let mol = Molecule::from_file(molfile).unwrap();
-            let server = &context.server;
-            let uri = format!("http://{server}/view-molecule");
-            let resp = client.post(&uri).json(&mol).send().unwrap().text().unwrap();
-            Ok(Some(format!("serve resp: {resp}")))
-        } else {
-            Ok(Some(format!("invalid")))
+    /// Take action on REPL commands. Return Ok(true) will exit shell
+    /// loop.
+    fn act_on(&mut self, cmd: &Cmd) -> Result<bool> {
+        match cmd {
+            Cmd::Quit {} => return Ok(true),
+
+            Cmd::Help {} => {
+                let mut app = Cmd::command();
+                if let Err(err) = app.print_help() {
+                    eprintln!("clap error: {err:?}");
+                }
+                println!("");
+            }
+
+            Cmd::Load { molfile } => {
+                let mol = Molecule::from_file(molfile)?;
+                let server = &self.server;
+                let uri = format!("http://{server}/view-molecule");
+                let resp = self.client()?.post(&uri).json(&mol).send()?.text()?;
+                println!("{resp:?}");
+            }
+
+            Cmd::Connect { server } => {
+                println!("connect to {server}");
+                self.server = server.to_owned();
+            }
+
+            Cmd::Label { delete } => {
+                let server = &self.server;
+                let uri = format!("http://{server}/label-atoms");
+                let resp = self.client()?.post(&uri).send()?.text()?;
+                println!("{resp:?}");
+            }
+
+            Cmd::Delete {} => {
+                let server = &self.server;
+                let uri = format!("http://{server}/delete-molecule");
+                let resp = self.client()?.post(&uri).send()?.text()?;
+                println!("{resp:?}");
+            }
+
+            o => {
+                eprintln!("{:?}: not implemented yet!", o);
+            }
         }
-    } else {
-        Ok(Some(format!("invalid")))
+
+        Ok(false)
     }
 }
-// cb0b9648 ends here
-
-// [[file:../../bevy.note::55de8bbc][55de8bbc]]
-#[derive(Parser)]
-#[command(name = "label")]
-/// Label atoms with their serial numbers
-struct Label {
-    #[arg(short, long)]
-    delete: bool,
-}
-
-fn label(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
-    let delete_label = args.get_one::<bool>("delete");
-
-    // FIXME: remove unwrap
-    if let Some(client) = context.client.as_mut() {
-        let server = &context.server;
-        let uri = format!("http://{server}/label-atoms");
-        let resp = client.post(&uri).send().unwrap().text().unwrap();
-        Ok(Some(format!("serve resp: {resp}")))
-    } else {
-        Ok(Some(format!("invalid")))
-    }
-}
-// 55de8bbc ends here
-
-// [[file:../../bevy.note::e3d61698][e3d61698]]
-#[derive(Parser)]
-#[command(name = "delete")]
-/// Delete current molecule
-struct Delete {
-    //
-}
-
-fn delete(args: ArgMatches, context: &mut Context) -> Result<Option<String>> {
-    // FIXME: remove unwrap
-    if let Some(client) = context.client.as_mut() {
-        let server = &context.server;
-        let uri = format!("http://{server}/delete-molecule");
-        let resp = client.post(&uri).send().unwrap().text().unwrap();
-        Ok(Some(format!("serve resp: {resp}")))
-    } else {
-        Ok(Some(format!("invalid")))
-    }
-}
-// e3d61698 ends here
+// a252f98f ends here
 
 // [[file:../../bevy.note::7a8f9dd7][7a8f9dd7]]
 /// Prepend name to list
 fn main() -> Result<()> {
-    let mut repl = Repl::new(Context::default())
-        .with_name("gchemol-view")
-        .with_version("v0.2.0")
-        .with_description("A simple molecule viewer")
-        .with_banner("Welcome to gchemol-view")
-        .with_command(Connect::command(), connect)
-        .with_command(Load::command(), load)
-        .with_command(Label::command(), label)
-        .with_command(Delete::command(), delete);
+    let action = Action::default();
+    let x = Interpreter::new(action).with_prompt("gchemol-view> ").run::<Cmd>();
 
-    repl.run()
+    Ok(())
 }
 // 7a8f9dd7 ends here
