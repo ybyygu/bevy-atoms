@@ -12,12 +12,6 @@ use bevy_prototype_debug_lines::*;
 
 // [[file:../bevy.note::031857dd][031857dd]]
 use crate::player::FrameIndex;
-
-#[derive(Clone, Copy, Debug, Component)]
-pub struct AtomIndex(usize);
-
-#[derive(Clone, Copy, Debug, Component)]
-pub struct BondIndex(usize);
 // 031857dd ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]

@@ -137,6 +137,9 @@ fn get_atom_color(atom: &gchemol_core::Atom) -> Color {
 // 4f2c9201 ends here
 
 // [[file:../bevy.note::0b92cef9][0b92cef9]]
+#[derive(Clone, Copy, Debug, Component)]
+pub struct AtomIndex(pub usize);
+
 #[derive(Clone, Debug, Component)]
 pub struct Atom {
     color: Color,
@@ -201,6 +204,9 @@ impl AtomBundle {
 // 0b92cef9 ends here
 
 // [[file:../bevy.note::5a5c8b3f][5a5c8b3f]]
+#[derive(Clone, Copy, Debug, Component)]
+pub struct BondIndex(usize);
+
 #[derive(Clone, Debug, Component)]
 pub struct Bond {
     atom1: Atom,
@@ -324,7 +330,7 @@ pub fn spawn_molecule(
                 let mut atom = Atom::new(a);
                 atom.set_visible(visible);
                 let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-                commands.spawn(atom_bundle);
+                commands.spawn(atom_bundle).insert(AtomIndex(i));
             }
 
             // add chemical bonds

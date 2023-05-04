@@ -9,9 +9,9 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 # Features
 
 -   [X] visualization of atom, bond and lattice
--   [X] visualization of molecule trajectory (Left/Right key for next/previous frame)
 -   [X] mouse control for view like in GaussView
--   [X] console window for command lines like in PyMol
+-   [X] view molecules sent from remote client side in terminal
+-   [X] visualization of molecule trajectory (Left/Right key for next/previous frame, currently broken in v0.2.0)
 
 
 # Install
@@ -35,22 +35,12 @@ Visualization of molecules from common file formats supported by [gchemol](https
     gchemol-view POSCAR
     gchemol-view foo.cif
 
-Visualization of molecule trajectory (use arrow key to control the frame):
-
-    gchemol-view traj.xyz
-
-Press "\`" key (KeyCode::Grave) to toggle console window. Press help for command usage.
-
 
 # Todo List
 
--   [X] better light system (still not perfect)
--   [X] label atoms
--   [X] fix rotation locking issue
 -   [ ] fix visualiation of lattice in trajectory animation
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
--   [ ] write molecule to file in console window
 
 
 # Credits

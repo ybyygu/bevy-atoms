@@ -88,30 +88,44 @@ pub enum AtomLabelEvent {
 
 // Create/hide/show atom labels
 fn handle_atom_label_events(
-    mut events: EventReader<AtomLabelEvent>,
-    asset_server: &Res<AssetServer>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut events: EventReader<AtomLabelEvent>,
     mut label_query: Query<(Entity, &AtomLabel), With<AtomLabel>>,
 ) {
-    if let Some(event) = events.iter().next() {
+    for event in events.iter() {
         match event {
             AtomLabelEvent::Create((entity, text)) => {
-                let label = create_label_text(asset_server, text);
+                debug!("create label for entity {entity:?} with {text:?}");
+                let label = create_label_text(&asset_server, text);
                 commands.spawn((label, AtomLabel::new(*entity)));
             }
             AtomLabelEvent::Delete(entity) => {
+                debug!("delete label for entity {entity:?}");
                 for (entity, label) in label_query.iter() {
                     if label.entity == entity {
                         commands.entity(entity).despawn();
+                        debug!("label for {entity:?} deleted");
                     }
                 }
             }
         }
-        // Consumes all available events.
-        events.clear();
     }
 }
 // f1cac934 ends here
+
+// [[file:../bevy.note::bccb8119][bccb8119]]
+mod menu {
+    use bevy::prelude::*;
+    use bevy_egui::{egui, EguiContexts, EguiPlugin};
+
+    pub fn example_system(mut contexts: EguiContexts) {
+        egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
+            ui.label("world");
+        });
+    }
+}
+// bccb8119 ends here
 
 // [[file:../bevy.note::f9bfb184][f9bfb184]]
 #[derive(Debug, Clone, Default)]
@@ -121,10 +135,12 @@ pub struct LabelPlugin {
 
 impl Plugin for LabelPlugin {
     fn build(&self, app: &mut App) {
-        // use bevy_console::AddConsoleCommand;
+        use bevy_egui::EguiPlugin;
 
         app.add_event::<AtomLabelEvent>()
-            // .add_console_command::<LabelCommand, _>(label_command)
+            .add_plugin(EguiPlugin)
+            .add_system(menu::example_system)
+            .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
     }
 }

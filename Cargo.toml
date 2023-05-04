@@ -58,6 +58,8 @@ lerp = "0.4.0"                                                         # for cam
 # bevy_console = "0.7.0"                                                 # command line UI
 # bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
 bevy_panorbit_camera = { version = "0.4.1" }
+# egui = { version = "0.21.0", default-features = false, features = ["bytemuck"] }
+
 
 gut = { version = "0.4.4", package = "gchemol-gut" }
 gchemol-core = { version = "0.1.4", features = ["adhoc"] }
@@ -76,7 +78,9 @@ reqwest = { version = "0.11", default-features = false, features = [
   "blocking",
   "rustls-tls",
 ] }
-
+serde = { version = "1", features = ["derive"] }
+# reedline-repl-rs = "1.0.5"
+gosh-repl = "0.1.1"
 
 # native build only:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -88,7 +92,8 @@ embed-resource = "1.4"
 
 [workspace]
 
-# [patch.crates-io]
-# gchemol-gut = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gut" }
-# gchemol-core = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-core" }
+[patch.crates-io]
+gchemol-gut = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gut" }
+gchemol-core = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-core" }
+gosh-repl = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/shell"}
 # e345323a ends here
