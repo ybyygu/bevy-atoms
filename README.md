@@ -8,10 +8,11 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 
 # Features
 
--   [X] visualization of atom, bond and lattice
--   [X] mouse control for view like in GaussView
--   [X] view molecules sent from remote client side in terminal
--   [X] visualization of molecule trajectory (Left/Right key for next/previous frame, currently broken in v0.2.0)
+-   Lightweight molecule viewer
+    -   fast to load molecule with thousands of atoms
+    -   immediately exit by pressing the ESC key
+-   Remote view: view molecules locally sent from a remote client in the
+    terminal without X environment
 
 
 # Install
