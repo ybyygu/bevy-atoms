@@ -92,8 +92,8 @@ embed-resource = "1.4"
 
 [workspace]
 
-[patch.crates-io]
-gchemol-gut = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gut" }
-gchemol-core = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-core" }
-gosh-repl = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/shell"}
+# [patch.crates-io]
+# gchemol-gut = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gut" }
+# gchemol-core = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-core" }
+# gosh-repl = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/shell"}
 # e345323a ends here

@@ -139,7 +139,7 @@ impl Plugin for LabelPlugin {
 
         app.add_event::<AtomLabelEvent>()
             .add_plugin(EguiPlugin)
-            .add_system(menu::example_system)
+            // .add_system(menu::example_system)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
     }
