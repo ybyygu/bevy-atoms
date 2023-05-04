@@ -1,4 +1,6 @@
 // [[file:../../bevy.note::d351781a][d351781a]]
+#![cfg(not(target_arch = "wasm32"))]
+
 use gut::cli::*;
 use gut::prelude::*;
 
