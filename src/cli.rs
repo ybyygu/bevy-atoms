@@ -16,6 +16,13 @@ use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
+use bevy::app::AppExit;
+fn exit_on_q(keyboard_input: Res<Input<KeyCode>>, mut app_exit_events: ResMut<Events<AppExit>>) {
+    if keyboard_input.just_pressed(KeyCode::Q) {
+        app_exit_events.send(AppExit);
+    }
+}
+
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
 /// A simple molecule viewer
@@ -29,7 +36,7 @@ impl ViewerCli {
         let args = Self::parse();
 
         let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
-        // FIXME: should be refactored when UI is ready
+        // FIXME: refactor when UI ready
         for mol in mols.iter_mut() {
             let lat = mol.unbuild_crystal();
             // mol.recenter();
@@ -63,6 +70,7 @@ impl ViewerCli {
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
             // .add_system(bevy::window::close_on_esc)
+            .add_system(exit_on_q)
             .add_system(bevy::window::exit_on_primary_closed)
             .run();
 
