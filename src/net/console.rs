@@ -31,6 +31,8 @@ fn delete_command(
 // 22cddf8a ends here
 
 // [[file:../../bevy.note::09fa2046][09fa2046]]
+use bevy_panorbit_camera::PanOrbitCamera;
+
 fn load_command(
     mut commands: Commands,
     mut reader: EventReader<StreamEvent>,
@@ -38,6 +40,7 @@ fn load_command(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
     molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    mut arcball_camera: Query<&mut PanOrbitCamera>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
         match cmd {
@@ -52,6 +55,11 @@ fn load_command(
                 }
                 // show molecule on received
                 crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
+                // recenter view
+                if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
+                    let center = mol.center_of_geometry().map(|x| x as f32);
+                    pan_orbit.focus = center.into();
+                }
                 break;
             }
             _ => {
