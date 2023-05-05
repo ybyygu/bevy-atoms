@@ -37,11 +37,47 @@ Visualization of molecules from common file formats supported by [gchemol](https
     gchemol-view foo.cif
 
 
+# View molecule sent from the command line without an X environment
+
+You can view a molecule in gchemol-view on your local machine that was
+sent from a remote HPC server in command line using [spdkit-python](https://github.com/spdkit/python/releases).
+
+    from spdkit import *
+    
+    mol = Molecule.from_file("foo.mol2", remote=True)
+    view(mol)
+
+To achieve this, you need a working reverse SSH channel.
+
+
+## How to setup in Linux
+
+Setup reverse port forwarding from desktop to remote SSH server:
+
+    ssh -N -R remote-port:localhost:3039 remote-ssh-server
+
+To automatically set up a reverse channel when logging into a remote
+SSH server, you can create an entry in your ~/.ssh/config file.
+
+    host Khpcserver01
+        hostname remote-ssh-server
+        ExitOnForwardFailure yes
+        RemoteForward {{remote-port}} localhost:3039
+
+
+## How to setup in Windows
+
+If you are using XShell, you can refer to the image below:
+
+![img](data/72/9b0609-04b6-40c0-93db-5674f85b0738/2023-05-05_16-52-23_screenshot.png)
+
+
 # Todo List
 
 -   [ ] fix visualiation of lattice in trajectory animation
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
+-   [ ] measure distance, angle, torsion angle
 
 
 # Credits
