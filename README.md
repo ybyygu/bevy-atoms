@@ -43,7 +43,7 @@ sent from a remote HPC server in command line using [spdkit-python](https://gith
     from spdkit import *
     
     mol = Molecule.from_file("foo.mol2", remote=True)
-    view(mol)
+    view(mol, remote=True)
 
 To achieve this, you need a working reverse SSH channel.
 
