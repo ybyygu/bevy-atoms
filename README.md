@@ -6,13 +6,11 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 ![img](data/72/9b0609-04b6-40c0-93db-5674f85b0738/2023-04-09_09-52-36_screenshot.png)
 
 
-# Features
+# Interesting features
 
--   Lightweight molecule viewer
-    -   fast to load molecule with thousands of atoms
-    -   immediately exit by pressing the ESC key
+-   Lightweight molecule viewer: fast to load molecule with thousands of atoms
 -   Remote view: view molecules locally sent from a remote client in the
-    terminal without X environment
+    terminal without an X environment
 
 
 # Install
