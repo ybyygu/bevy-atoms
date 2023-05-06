@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.2.2"
+version = "0.2.3"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
@@ -75,6 +75,7 @@ reqwest = { version = "0.11", default-features = false, features = [
   "rustls-tls",
 ] }
 serde = { version = "1", features = ["derive"] }
+rfd = "0.11.3"
 
 [dev-dependencies]
 bevy = { version = "0.10" }

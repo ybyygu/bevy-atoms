@@ -140,6 +140,8 @@ mod panel {
         mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
         mut label_events: EventWriter<AtomLabelEvent>,
         mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
+        mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        mut writer: EventWriter<crate::net::StreamEvent>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -151,7 +153,38 @@ mod panel {
         egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
             ui.label("Available operations:");
             ui.separator();
-            // 1. label atoms by serial numbers
+            // open file dialog
+            if ui.button("Load molecules from …").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    use gchemol::io::prelude::*;
+                    if let Ok(mols) = gchemol::io::read(path) {
+                        let mols: Vec<_> = mols
+                            // create bonds if necessary
+                            .map(|mut m| {
+                                if m.nbonds() == 0 {
+                                    let lat = m.unbuild_crystal();
+                                    m.rebond();
+                                    m.lattice = lat;
+                                    info!("bonds created.");
+                                }
+                                m
+                            })
+                            .collect();
+                        let n = mols.len();
+                        let command = crate::net::RemoteCommand::Load(mols);
+                        writer.send(crate::net::StreamEvent(command));
+                        state.message = format!("{n} Molecules loaded.");
+                    }
+                }
+            }
+            // save file dialog
+            if ui.button("Save molecules to file …").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    traj.save_as(path.as_ref());
+                    state.message = format!("Molecules saved to {path:?}");
+                }
+            }
+            // label atoms by serial numbers
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 if state.label_atoms_checked {
                     info!("create atoms labels ...");
@@ -163,7 +196,7 @@ mod panel {
                     label_events.send(AtomLabelEvent::Delete);
                 }
             }
-            // 2. Remove all molecules
+            // Remove all molecules
             if ui.button("Clear Molecule").clicked() {
                 if let Ok(molecule_entity) = molecule_query.get_single() {
                     info!("remove molecule");
@@ -174,7 +207,7 @@ mod panel {
                     state.message = "No molecule present".into();
                 }
             }
-            // 3. Put molecule in the center of view
+            // Put molecule in the center of view
             if ui.button("Recenter Molecule").clicked() {
                 state.message = "no implemented yet".into();
             }

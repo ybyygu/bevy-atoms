@@ -100,6 +100,16 @@ pub struct MoleculeTrajectory {
 pub struct VisilizationState {
     pub display_label: bool,
 }
+
+impl MoleculeTrajectory {
+    pub fn save_as(&self, path: &std::path::Path) {
+        use gchemol::io::prelude::*;
+
+        if let Err(err) = gchemol::io::write(path, &self.mols) {
+            error!("Write molecules error: {err:?}");
+        }
+    }
+}
 // c068ff9c ends here
 
 // [[file:../bevy.note::20198b2d][20198b2d]]

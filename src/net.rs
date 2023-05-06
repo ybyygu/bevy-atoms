@@ -19,7 +19,7 @@ type RemoteCommandSender = Sender<RemoteCommand>;
 
 #[derive(Resource, Deref)]
 pub struct StreamReceiver(RemoteCommandReceiver);
-pub struct StreamEvent(RemoteCommand);
+pub struct StreamEvent(pub RemoteCommand);
 
 fn new_channel() -> (RemoteCommandSender, RemoteCommandReceiver) {
     crossbeam_channel::bounded(1)
