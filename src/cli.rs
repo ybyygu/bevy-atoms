@@ -66,6 +66,8 @@ impl ViewerCli {
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
+            // Set background color
+            .insert_resource(ClearColor(Color::BLACK))
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
