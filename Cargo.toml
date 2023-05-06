@@ -29,7 +29,7 @@ dev = ["bevy/bevy_dylib"]
 
 [dependencies]
 # https://bevy-cheatbook.github.io/setup/bevy-config.html#bevy-cargo-features
-bevy = { version = "0.10", default-features = false, features = [
+bevy = { version = "0.10.1", default-features = false, features = [
   "bevy_asset", # Assets management
   "bevy_winit", # Window management
   "x11",        # Linux: Support X11 windowing system
@@ -57,7 +57,7 @@ bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 lerp = "0.4.0"                                                         # for camera
 # bevy_console = "0.7.0"                                                 # command line UI
 # bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
-bevy_panorbit_camera = { version = "0.4.1" }
+bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"], path = "/home/ybyygu/Incoming/repos/bevy_panorbit_camera/" }
 # egui = { version = "0.21.0", default-features = false, features = ["bytemuck"] }
 
 

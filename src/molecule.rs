@@ -160,7 +160,14 @@ pub fn spawn_molecules(
 
     // mouse: zoom, rotate and translate
     commands
-        .spawn(Camera3dBundle::default())
+        .spawn(Camera3dBundle {
+            // projection: Projection::Orthographic(OrthographicProjection {
+            //     near: -500.0,
+            //     far: 500.0,
+            //     ..default()
+            // }),
+            ..default()
+        })
         .insert(arcball_camera)
         .insert(PickingCameraBundle::default());
 
@@ -202,7 +209,6 @@ impl Plugin for MoleculePlugin {
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
             .add_plugin(DebugLinesPlugin::default())
-            .add_plugin(PanOrbitCameraPlugin)
             .add_system(update_light_with_camera)
             .add_startup_system(spawn_molecules);
 

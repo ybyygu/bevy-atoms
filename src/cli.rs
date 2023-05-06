@@ -14,7 +14,9 @@ use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
+use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
 use bevy::app::AppExit;
 fn exit_on_q(keyboard_input: Res<Input<KeyCode>>, mut app_exit_events: ResMut<Events<AppExit>>) {
@@ -49,7 +51,8 @@ impl ViewerCli {
             default_plugin
                 .build()
                 .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
-        );
+        )
+        .add_plugin(PanOrbitCameraPlugin);
 
         let mols = if let Some(molfile) = args.molfile {
             let mut mols: Vec<_> = gchemol::io::read(&molfile)?.collect();
@@ -67,9 +70,9 @@ impl ViewerCli {
         };
         let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
-        app
-            // .add_plugin(EguiPlugin)
-            .add_plugins(DefaultPickingPlugins)
+        app.add_plugin(EguiPlugin)
+            // .add_plugin(WorldInspectorPlugin::default())
+            // .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
             // Set background color
@@ -77,8 +80,8 @@ impl ViewerCli {
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
-            // .add_system(bevy::window::close_on_esc)
             .add_system(exit_on_q)
+            // .add_system(bevy::window::close_on_esc)
             .add_system(bevy::window::exit_on_primary_closed)
             .run();
 
