@@ -118,92 +118,58 @@ mod panel {
     use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
     use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
-    #[derive(Default, Resource)]
-    pub struct OccupiedScreenSpace {
-        left: f32,
-        top: f32,
-        right: f32,
-        bottom: f32,
+    #[derive(Debug, Resource)]
+    pub struct UiState {
+        label_atoms_checked: bool,
+        message: String,
     }
 
-    const CAMERA_TARGET: Vec3 = Vec3::ZERO;
+    impl Default for UiState {
+        fn default() -> Self {
+            Self {
+                label_atoms_checked: false,
+                message: "Tip: You can press `q` to exit.".to_owned(),
+            }
+        }
+    }
 
-    #[derive(Resource, Deref, DerefMut)]
-    struct OriginalCameraTransform(Transform);
-
-    pub fn side_panels(mut contexts: EguiContexts, mut occupied_screen_space: ResMut<OccupiedScreenSpace>) {
+    pub fn side_panels(
+        mut state: ResMut<UiState>,
+        mut contexts: EguiContexts,
+        mut commands: Commands,
+        mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    ) {
         let ctx = contexts.ctx_mut();
 
-        occupied_screen_space.left = egui::SidePanel::left("left_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                ui.label("Left resizeable panel");
-                ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-            })
-            .response
-            .rect
-            .width();
-        occupied_screen_space.right = egui::SidePanel::right("right_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                ui.label("Right resizeable panel");
-                ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-            })
-            .response
-            .rect
-            .width();
-        occupied_screen_space.top = egui::TopBottomPanel::top("top_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                ui.label("Top resizeable panel");
-                ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-            })
-            .response
-            .rect
-            .height();
-        occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                ui.label("Bottom resizeable panel");
-                ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-            })
-            .response
-            .rect
-            .height();
-    }
+        // use light theme
+        let mut style = egui::Style::default();
+        style.visuals = egui::Visuals::light();
+        ctx.set_style(style);
 
-    fn update_camera_transform_system(
-        occupied_screen_space: Res<OccupiedScreenSpace>,
-        original_camera_transform: Res<OriginalCameraTransform>,
-        windows: Query<&Window, With<PrimaryWindow>>,
-        mut camera_query: Query<(&Projection, &mut Transform)>,
-    ) {
-        let (camera_projection, mut transform) = match camera_query.get_single_mut() {
-            Ok((Projection::Perspective(projection), transform)) => (projection, transform),
-            _ => unreachable!(),
-        };
+        egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
+            ui.label("Available operations:");
+            ui.separator();
+            // 1. label atoms by serial numbers
+            ui.checkbox(&mut state.label_atoms_checked, "Label atoms");
+            // 2. Remove all molecules
+            if ui.button("Clear Molecule").clicked() {
+                if let Ok(molecule_entity) = molecule_query.get_single() {
+                    info!("remove molecule");
+                    commands.entity(molecule_entity).despawn_recursive();
+                } else {
+                    state.message = "No molecule present".into();
+                }
+            }
+            // 3. Put molecule in the center of view
+            if ui.button("Recenter Molecule").clicked() {
+                // Clear the molecule
+            }
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+        });
 
-        let distance_to_target = (CAMERA_TARGET - original_camera_transform.translation).length();
-        let frustum_height = 2.0 * distance_to_target * (camera_projection.fov * 0.5).tan();
-        let frustum_width = frustum_height * camera_projection.aspect_ratio;
-
-        let window = windows.single();
-
-        let left_taken = occupied_screen_space.left / window.width();
-        let right_taken = occupied_screen_space.right / window.width();
-        let top_taken = occupied_screen_space.top / window.height();
-        let bottom_taken = occupied_screen_space.bottom / window.height();
-        transform.translation = original_camera_transform.translation
-            + transform.rotation.mul_vec3(Vec3::new(
-                (right_taken - left_taken) * frustum_width * 0.5,
-                (top_taken - bottom_taken) * frustum_height * 0.5,
-                0.0,
-            ));
-    }
-
-    pub fn example_system(mut contexts: EguiContexts) {
-        egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
-            ui.label("world");
+        egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
+            ui.label(&state.message);
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
     }
 }
@@ -220,7 +186,7 @@ impl Plugin for LabelPlugin {
         use bevy_egui::EguiPlugin;
 
         app.add_event::<AtomLabelEvent>()
-            .init_resource::<panel::OccupiedScreenSpace>()
+            .init_resource::<panel::UiState>()
             .add_system(panel::side_panels)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
