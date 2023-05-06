@@ -28,22 +28,12 @@ fn exit_on_q(keyboard_input: Res<Input<KeyCode>>, mut app_exit_events: ResMut<Ev
 /// A simple molecule viewer
 pub struct ViewerCli {
     /// path to molecule to compute
-    molfile: PathBuf,
+    molfile: Option<PathBuf>,
 }
 
 impl ViewerCli {
     pub fn enter_main() -> Result<()> {
         let args = Self::parse();
-
-        let mut mols: Vec<_> = gchemol::io::read(&args.molfile)?.collect();
-        // FIXME: refactor when UI ready
-        for mol in mols.iter_mut() {
-            let lat = mol.unbuild_crystal();
-            // mol.recenter();
-            mol.rebond();
-            mol.lattice = lat;
-        }
-        let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
         let log_plugin = LogPlugin {
             level: bevy::log::Level::INFO,
@@ -54,14 +44,30 @@ impl ViewerCli {
             ..default()
         };
         let default_plugin = DefaultPlugins.set(log_plugin).set(window_plugin);
+        let mut app = App::new();
+        app.add_plugins(
+            default_plugin
+                .build()
+                .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
+        );
 
-        App::new()
-            .add_plugins(
-                default_plugin
-                    .build()
-                    .add_before::<bevy::asset::AssetPlugin, _>(EmbeddedAssetPlugin),
-            )
-            // .add_plugin(crate::GamePlugin)
+        let mols = if let Some(molfile) = args.molfile {
+            let mut mols: Vec<_> = gchemol::io::read(&molfile)?.collect();
+            info!("Loaded {} molecules from {:?}", mols.len(), molfile);
+            // FIXME: refactor when UI ready
+            for mol in mols.iter_mut() {
+                let lat = mol.unbuild_crystal();
+                mol.rebond();
+                mol.lattice = lat;
+            }
+            mols
+        } else {
+            info!("No molecule loaded.");
+            vec![]
+        };
+        let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
+
+        app
             // .add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.

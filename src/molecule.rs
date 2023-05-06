@@ -32,8 +32,9 @@ fn update_light_with_camera(
         }
     }
 
-    let (camera, camera_transform) = camera_query.single();
-    let viewport = camera.world_to_viewport(camera_transform, Vec3::new(2.144404, 2.2027268, 2.6483808));
+    if let Ok((camera, camera_transform)) = camera_query.get_single() {
+        let viewport = camera.world_to_viewport(camera_transform, Vec3::new(2.144404, 2.2027268, 2.6483808));
+    }
 }
 // 711fbcb5 ends here
 
@@ -197,26 +198,18 @@ impl MoleculePlugin {
 
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
-        use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
             .add_plugin(DebugLinesPlugin::default())
             .add_plugin(PanOrbitCameraPlugin)
-            // .add_plugin(WorldInspectorPlugin::new())
-            .add_system(update_light_with_camera);
+            .add_system(update_light_with_camera)
+            .add_startup_system(spawn_molecules);
 
         match self.traj.mols.len() {
-            0 => {
-                eprintln!("No molecule loaded!");
-            }
-            1 => {
-                app.add_startup_system(spawn_molecules);
-                // .add_system(crate::ui::update_atom_labels_with_camera);
-            }
+            0 | 1 => {}
             _ => {
-                app.add_startup_system(spawn_molecules);
+                // for animation
                 // .add_system(frame_control.after(update_atom_labels_with_camera))
                 // .add_system(create_atom_label)
                 // .add_system(play_animation.in_base_set(PostStartup));

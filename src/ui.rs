@@ -49,7 +49,6 @@ fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>) -
     text
 }
 
-
 /// Update atom label position by projecting 3D atom position to 2D
 /// screen
 fn update_atom_labels_with_camera(
@@ -58,20 +57,20 @@ fn update_atom_labels_with_camera(
     transform_query: Query<&Transform>,
     windows: Query<&Window>,
 ) {
-    let (camera, camera_transform) = camera_query.single();
-
-    let window = windows.single();
-    for (label, mut style, calc_size, visibility) in &mut label_style_query {
-        if visibility.is_visible() {
-            let label_size = calc_size.size;
-            if let Ok(atom_transform) = transform_query.get(label.entity) {
-                let atom_position = atom_transform.translation;
-                if let Some(screen_position) = camera.world_to_viewport(camera_transform, atom_position) {
-                    style.position.left = Val::Px(screen_position.x - label_size.x * 0.5 + label.offset.x);
-                    style.position.top = Val::Px(window.height() - (screen_position.y + label_size.y * 0.5 + label.offset.y));
-                } else {
-                    // A hack to hide the text when the it's behind the camera
-                    style.position.bottom = Val::Px(-1000.0);
+    if let Ok((camera, camera_transform)) = camera_query.get_single() {
+        let window = windows.single();
+        for (label, mut style, calc_size, visibility) in &mut label_style_query {
+            if visibility.is_visible() {
+                let label_size = calc_size.size;
+                if let Ok(atom_transform) = transform_query.get(label.entity) {
+                    let atom_position = atom_transform.translation;
+                    if let Some(screen_position) = camera.world_to_viewport(camera_transform, atom_position) {
+                        style.position.left = Val::Px(screen_position.x - label_size.x * 0.5 + label.offset.x);
+                        style.position.top = Val::Px(window.height() - (screen_position.y + label_size.y * 0.5 + label.offset.y));
+                    } else {
+                        // A hack to hide the text when the it's behind the camera
+                        style.position.bottom = Val::Px(-1000.0);
+                    }
                 }
             }
         }
