@@ -14,7 +14,6 @@ use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
@@ -72,8 +71,7 @@ impl ViewerCli {
 
         app
             .add_plugin(EguiPlugin)
-            // .add_plugin(WorldInspectorPlugin::default())
-            // .add_plugins(DefaultPickingPlugins)
+            .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
             // Set background color
