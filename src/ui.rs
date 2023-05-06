@@ -115,6 +115,9 @@ fn handle_atom_label_events(
 
 // [[file:../bevy.note::bccb8119][bccb8119]]
 mod panel {
+    use crate::player::AtomIndex;
+    use crate::ui::AtomLabelEvent;
+
     use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
     use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
@@ -138,6 +141,8 @@ mod panel {
         mut contexts: EguiContexts,
         mut commands: Commands,
         mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+        mut label_events: EventWriter<AtomLabelEvent>,
+        mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -150,7 +155,20 @@ mod panel {
             ui.label("Available operations:");
             ui.separator();
             // 1. label atoms by serial numbers
-            ui.checkbox(&mut state.label_atoms_checked, "Label atoms");
+            if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
+                if state.label_atoms_checked {
+                    info!("create atoms labels ...");
+                    for (entity, atom_index) in atoms_query.iter() {
+                        label_events.send(AtomLabelEvent::Create((entity, format!("{}", atom_index.0))));
+                    }
+                } else {
+                    info!("delete atoms labels ...");
+                    for (entity, _atom_index) in atoms_query.iter() {
+                        label_events.send(AtomLabelEvent::Delete(entity));
+                    }
+                }
+            }
+
             // 2. Remove all molecules
             if ui.button("Clear Molecule").clicked() {
                 if let Ok(molecule_entity) = molecule_query.get_single() {
