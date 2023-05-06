@@ -154,7 +154,7 @@ mod panel {
             ui.label("Available operations:");
             ui.separator();
             // open file dialog
-            if ui.button("Load molecules from …").clicked() {
+            if ui.button("Load …").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                     use gchemol::io::prelude::*;
                     if let Ok(mols) = gchemol::io::read(path) {
@@ -178,7 +178,7 @@ mod panel {
                 }
             }
             // save file dialog
-            if ui.button("Save molecules to file …").clicked() {
+            if ui.button("Save …").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                     traj.save_as(path.as_ref());
                     state.message = format!("Molecules saved to {path:?}");
