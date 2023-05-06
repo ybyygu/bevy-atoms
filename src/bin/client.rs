@@ -35,13 +35,6 @@ enum Cmd {
         server: String,
     },
 
-    #[command(name = "label")]
-    /// Label atoms with their serial numbers
-    Label {
-        #[arg(short, long)]
-        delete: bool,
-    },
-
     #[command(name = "delete")]
     /// Delete current molecule
     Delete {
@@ -108,13 +101,6 @@ impl Actionable for Action {
             Cmd::Connect { server } => {
                 println!("connect to {server}");
                 self.server = server.to_owned();
-            }
-
-            Cmd::Label { delete } => {
-                let server = &self.server;
-                let uri = format!("http://{server}/label-atoms");
-                let resp = self.client()?.post(&uri).send()?.text()?;
-                println!("{resp:?}");
             }
 
             Cmd::Delete {} => {

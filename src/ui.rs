@@ -82,7 +82,7 @@ fn update_atom_labels_with_camera(
 /// Atom label related event
 pub enum AtomLabelEvent {
     Create((Entity, String)),
-    Delete(Entity),
+    Delete,
 }
 
 // Create/hide/show atom labels
@@ -90,7 +90,7 @@ fn handle_atom_label_events(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut events: EventReader<AtomLabelEvent>,
-    mut label_query: Query<(Entity, &AtomLabel), With<AtomLabel>>,
+    mut label_query: Query<Entity, With<AtomLabel>>,
 ) {
     for event in events.iter() {
         match event {
@@ -99,13 +99,10 @@ fn handle_atom_label_events(
                 let label = create_label_text(&asset_server, text);
                 commands.spawn((label, AtomLabel::new(*entity)));
             }
-            AtomLabelEvent::Delete(entity) => {
-                debug!("delete label for entity {entity:?}");
-                for (entity, label) in label_query.iter() {
-                    if label.entity == entity {
-                        commands.entity(entity).despawn();
-                        debug!("label for {entity:?} deleted");
-                    }
+            AtomLabelEvent::Delete => {
+                debug!("delete label ...");
+                for entity in label_query.iter() {
+                    commands.entity(entity).despawn();
                 }
             }
         }
@@ -163,24 +160,23 @@ mod panel {
                     }
                 } else {
                     info!("delete atoms labels ...");
-                    for (entity, _atom_index) in atoms_query.iter() {
-                        label_events.send(AtomLabelEvent::Delete(entity));
-                    }
+                    label_events.send(AtomLabelEvent::Delete);
                 }
             }
-
             // 2. Remove all molecules
             if ui.button("Clear Molecule").clicked() {
                 if let Ok(molecule_entity) = molecule_query.get_single() {
                     info!("remove molecule");
                     commands.entity(molecule_entity).despawn_recursive();
+                    // also remove atom labels
+                    label_events.send(AtomLabelEvent::Delete);
                 } else {
                     state.message = "No molecule present".into();
                 }
             }
             // 3. Put molecule in the center of view
             if ui.button("Recenter Molecule").clicked() {
-                // Clear the molecule
+                state.message = "no implemented yet".into();
             }
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });

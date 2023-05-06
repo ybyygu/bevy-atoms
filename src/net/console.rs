@@ -70,37 +70,10 @@ fn load_command(
 }
 // 09fa2046 ends here
 
-// [[file:../../bevy.note::d6420d3f][d6420d3f]]
-use crate::player::AtomIndex;
-use crate::ui::AtomLabelEvent;
-
-fn label_command(
-    mut reader: EventReader<StreamEvent>,
-    mut label_events: EventWriter<AtomLabelEvent>,
-    mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
-) {
-    for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
-        if let RemoteCommand::Label { delete } = cmd {
-            for (entity, atom_index) in atoms_query.iter() {
-                if *delete {
-                    info!("delete atom labels ...");
-                    label_events.send(AtomLabelEvent::Delete(entity));
-                } else {
-                    info!("create atom labels ...");
-                    label_events.send(AtomLabelEvent::Create((entity, format!("{}", atom_index.0))));
-                }
-            }
-        }
-    }
-}
-// d6420d3f ends here
-
 // [[file:../../bevy.note::3d0c7156][3d0c7156]]
 impl Plugin for RemoteConsolePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(delete_command)
-            .add_system(load_command)
-            .add_system(label_command);
+        app.add_system(delete_command).add_system(load_command);
     }
 }
 // 3d0c7156 ends here
