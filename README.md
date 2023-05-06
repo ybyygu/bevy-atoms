@@ -18,12 +18,17 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 
 ## Binary install
 
-Download prebuilt binary for Linux on the [release](https://github.com/ybyygu/gchemol-view/releases) page.
+Download prebuilt binary for Linux/Windows/MacOS on the [release](https://github.com/ybyygu/gchemol-view/releases) page.
 
 
 ## Compile from sources
 
 -   follow [bevy setup guide](https://bevyengine.org/learn/book/getting-started/setup/)
+
+Linux GTK is required for using native file dialog:
+On Ubuntu:
+
+    sudo apt-get install libgtk-3-dev
 
 
 # How to use
