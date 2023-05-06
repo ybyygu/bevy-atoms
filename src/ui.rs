@@ -210,8 +210,6 @@ mod panel {
 // bccb8119 ends here
 
 // [[file:../bevy.note::f9bfb184][f9bfb184]]
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
 #[derive(Debug, Clone, Default)]
 pub struct LabelPlugin {
     //
@@ -222,10 +220,8 @@ impl Plugin for LabelPlugin {
         use bevy_egui::EguiPlugin;
 
         app.add_event::<AtomLabelEvent>()
-            .add_plugin(WorldInspectorPlugin::default())
-            // .add_system(menu::example_system)
-            // .init_resource::<panel::OccupiedScreenSpace>()
-            // .add_system(panel::side_panels)
+            .init_resource::<panel::OccupiedScreenSpace>()
+            .add_system(panel::side_panels)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
     }

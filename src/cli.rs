@@ -42,7 +42,7 @@ impl ViewerCli {
             filter: "wgpu=error,gchemol_view=debug".to_string(),
         };
         let window_plugin = WindowPlugin {
-            exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+            // exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..default()
         };
         let default_plugin = DefaultPlugins.set(log_plugin).set(window_plugin);
@@ -70,7 +70,8 @@ impl ViewerCli {
         };
         let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
-        app.add_plugin(EguiPlugin)
+        app
+            .add_plugin(EguiPlugin)
             // .add_plugin(WorldInspectorPlugin::default())
             // .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
@@ -80,8 +81,8 @@ impl ViewerCli {
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
-            .add_system(exit_on_q)
             // .add_system(bevy::window::close_on_esc)
+            .add_system(exit_on_q)
             .add_system(bevy::window::exit_on_primary_closed)
             .run();
 
