@@ -95,7 +95,7 @@ jobs:
         with:
           toolchain: stable
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev libgtk-3-dev
       - name: Build release
         run: |
           cargo build --release
@@ -180,7 +180,7 @@ jobs:
         with:
           toolchain: stable
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev libgtk-3-dev
       - name: Install trunk
         uses: jetli/trunk-action@v0.1.0
         with:
