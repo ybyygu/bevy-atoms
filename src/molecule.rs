@@ -85,9 +85,6 @@ fn setup_lights(commands: &mut Commands) {
 
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
 #[derive(Resource, Clone, Debug, Default)]
-struct CurrentFrame(isize);
-
-#[derive(Resource, Clone, Debug, Default)]
 pub struct MoleculeTrajectory {
     mols: Vec<gchemol_core::Molecule>,
 }
@@ -109,50 +106,39 @@ impl MoleculeTrajectory {
 }
 // c068ff9c ends here
 
-// [[file:../bevy.note::0739b279][0739b279]]
-#[derive(Resource)]
-struct Animations(Vec<Handle<AnimationClip>>);
+// [[file:../bevy.note::20198b2d][20198b2d]]
+fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<CurrentFrame>) {
+    if keyboard_input.just_pressed(KeyCode::Right) {
+        current_frame.0 += 1;
+    } else if keyboard_input.just_pressed(KeyCode::Left) {
+        current_frame.0 -= 1;
+    }
+}
 
-// examples/animation/animated_fox.rs
-fn keyboard_animation_control(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut animation_player: Query<&mut AnimationPlayer>,
-    animations: Res<Animations>,
-    mut current_animation: Local<usize>,
+fn traj_animation_player(
+    traj: Res<MoleculeTrajectory>,
+    current_frame: Res<CurrentFrame>,
+    vis_state: Res<VisilizationState>,
+    mut visibility_query: Query<(&mut Visibility, &FrameIndex)>,
 ) {
-    if let Ok(mut player) = animation_player.get_single_mut() {
-        if keyboard_input.just_pressed(KeyCode::Space) {
-            if player.is_paused() {
-                player.resume();
-            } else {
-                player.pause();
-            }
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Up) {
-            let speed = player.speed();
-            player.set_speed(speed * 1.2);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Down) {
-            let speed = player.speed();
-            player.set_speed(speed * 0.8);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Left) {
-            let elapsed = player.elapsed();
-            player.set_elapsed(elapsed - 0.1);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Right) {
-            let elapsed = player.elapsed();
-            player.set_elapsed(elapsed + 0.1);
+    let nframe = traj.mols.len() as isize;
+    // % operator not work for negative number. We need Euclidean division.
+    // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
+    let ci = current_frame.0.rem_euclid(nframe);
+    for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
+        if *fi == ci as usize {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
         }
     }
 }
-// 0739b279 ends here
+// 20198b2d ends here
 
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
+#[derive(Resource, Clone, Debug, Default)]
+struct CurrentFrame(isize);
+
 pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -179,14 +165,6 @@ pub fn spawn_molecules(
         ..default()
     };
 
-    // Creating the animation
-    let mut animation = AnimationClip::default();
-
-    // animation
-    // Create the animation player, and set it to repeat
-    let mut player = AnimationPlayer::default();
-    player.play(animations.add(animation)).repeat();
-
     // mouse: zoom, rotate and translate
     commands
         .spawn(Camera3dBundle {
@@ -197,13 +175,14 @@ pub fn spawn_molecules(
             // }),
             ..default()
         })
-        .insert(player)
         .insert(arcball_camera)
         .insert(PickingCameraBundle::default());
 
     // create atoms and bonds
     for (fi, mol) in traj.mols.iter().enumerate() {
-        crate::player::spawn_molecule(mol, fi, &mut commands, &mut meshes, &mut materials);
+        // only show the first frame
+        let visible = fi == 0;
+        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
     }
 }
 // 1c6c0570 ends here
@@ -229,8 +208,9 @@ impl Plugin for MoleculePlugin {
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
             .add_startup_system(spawn_molecules)
-            .add_system(update_light_with_camera)
-            .add_system(keyboard_animation_control);
+            .add_system(keyboard_animation_control)
+            .add_system(traj_animation_player)
+            .add_system(update_light_with_camera);
 
         match self.traj.mols.len() {
             0 | 1 => {}
