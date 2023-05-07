@@ -77,7 +77,7 @@ If you are using XShell, you can refer to the image below:
 
 # Todo List
 
--   [ ] fix visualiation of lattice in trajectory animation
+-   [X] fix visualiation of lattice in trajectory animation
 -   [ ] set atom freezing codes for optimization
 -   [ ] select atoms by atom serial numbers
 -   [ ] measure distance, angle, torsion angle
