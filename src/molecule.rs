@@ -109,11 +109,55 @@ impl MoleculeTrajectory {
 }
 // c068ff9c ends here
 
+// [[file:../bevy.note::0739b279][0739b279]]
+#[derive(Resource)]
+struct Animations(Vec<Handle<AnimationClip>>);
+
+// examples/animation/animated_fox.rs
+fn keyboard_animation_control(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut animation_player: Query<&mut AnimationPlayer>,
+    animations: Res<Animations>,
+    mut current_animation: Local<usize>,
+) {
+    if let Ok(mut player) = animation_player.get_single_mut() {
+        if keyboard_input.just_pressed(KeyCode::Space) {
+            if player.is_paused() {
+                player.resume();
+            } else {
+                player.pause();
+            }
+        }
+
+        if keyboard_input.just_pressed(KeyCode::Up) {
+            let speed = player.speed();
+            player.set_speed(speed * 1.2);
+        }
+
+        if keyboard_input.just_pressed(KeyCode::Down) {
+            let speed = player.speed();
+            player.set_speed(speed * 0.8);
+        }
+
+        if keyboard_input.just_pressed(KeyCode::Left) {
+            let elapsed = player.elapsed();
+            player.set_elapsed(elapsed - 0.1);
+        }
+
+        if keyboard_input.just_pressed(KeyCode::Right) {
+            let elapsed = player.elapsed();
+            player.set_elapsed(elapsed + 0.1);
+        }
+    }
+}
+// 0739b279 ends here
+
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut animations: ResMut<Assets<AnimationClip>>,
     asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
 ) {
@@ -135,6 +179,14 @@ pub fn spawn_molecules(
         ..default()
     };
 
+    // Creating the animation
+    let mut animation = AnimationClip::default();
+
+    // animation
+    // Create the animation player, and set it to repeat
+    let mut player = AnimationPlayer::default();
+    player.play(animations.add(animation)).repeat();
+
     // mouse: zoom, rotate and translate
     commands
         .spawn(Camera3dBundle {
@@ -145,6 +197,7 @@ pub fn spawn_molecules(
             // }),
             ..default()
         })
+        .insert(player)
         .insert(arcball_camera)
         .insert(PickingCameraBundle::default());
 
@@ -175,8 +228,9 @@ impl Plugin for MoleculePlugin {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
+            .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)
-            .add_startup_system(spawn_molecules);
+            .add_system(keyboard_animation_control);
 
         match self.traj.mols.len() {
             0 | 1 => {}

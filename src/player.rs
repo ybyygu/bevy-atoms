@@ -341,7 +341,8 @@ pub fn spawn_molecule(
     commands
         .spawn(SpatialBundle::default())
         .insert(Molecule)
-        .insert(FrameIndex(frame_index))
+        // for animation control
+        .insert(Name::new(format!("frame-{frame_index}")))
         .with_children(|commands| {
             // spawn atoms
             for (i, a) in mol.atoms() {
