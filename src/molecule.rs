@@ -137,7 +137,16 @@ fn traj_animation_player(
 
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 #[derive(Resource, Clone, Debug, Default)]
-struct CurrentFrame(isize);
+pub struct CurrentFrame(isize);
+impl CurrentFrame {
+    pub fn next(&mut self) {
+        self.0 += 1;
+    }
+
+    pub fn prev(&mut self) {
+        self.0 -= 1;
+    }
+}
 
 pub fn spawn_molecules(
     mut commands: Commands,
@@ -208,18 +217,13 @@ impl Plugin for MoleculePlugin {
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
             .add_startup_system(spawn_molecules)
-            .add_system(keyboard_animation_control)
-            .add_system(traj_animation_player)
             .add_system(update_light_with_camera);
 
         match self.traj.mols.len() {
             0 | 1 => {}
             _ => {
                 // for animation
-                // .add_system(frame_control.after(update_atom_labels_with_camera))
-                // .add_system(create_atom_label)
-                // .add_system(play_animation.in_base_set(PostStartup));
-                // .add_system(play_animation.after(update_atom_labels_with_camera));
+                app.add_system(keyboard_animation_control).add_system(traj_animation_player);
             }
         }
     }

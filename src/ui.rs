@@ -142,6 +142,7 @@ mod panel {
         mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         mut writer: EventWriter<crate::net::StreamEvent>,
+        mut current_frame: ResMut<crate::molecule::CurrentFrame>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -214,9 +215,19 @@ mod panel {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
 
+        egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                if ui.button("Next frame").clicked() {
+                    current_frame.next();
+                }
+                if ui.button("Prev frame").clicked() {
+                    current_frame.prev();
+                }
+            });
+        });
+
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
             ui.label(&state.message);
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
     }
 }
