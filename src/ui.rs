@@ -26,7 +26,7 @@ impl AtomLabel {
 // 02f2343f ends here
 
 // [[file:../bevy.note::4c72e4a9][4c72e4a9]]
-fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>) -> TextBundle {
+fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, visible: bool) -> TextBundle {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let style = Style {
         position_type: PositionType::Absolute,
@@ -45,7 +45,7 @@ fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>) -
     .with_text_alignment(TextAlignment::Center)
     .with_style(style);
 
-    text.visibility = Visibility::Visible;
+    text.visibility = crate::player::visibility(visible);
     text
 }
 
@@ -91,13 +91,17 @@ fn handle_atom_label_events(
     asset_server: Res<AssetServer>,
     mut events: EventReader<AtomLabelEvent>,
     mut label_query: Query<Entity, With<AtomLabel>>,
+    // mut label_query: Query<Entity, With<AtomLabel>>,
 ) {
     for event in events.iter() {
         match event {
             AtomLabelEvent::Create((entity, text)) => {
                 debug!("create label for entity {entity:?} with {text:?}");
-                let label = create_label_text(&asset_server, text);
+                let label = create_label_text(&asset_server, text, true);
                 commands.spawn((label, AtomLabel::new(*entity)));
+                // NOTE: visibility not work
+                // let child = commands.spawn((label, AtomLabel::new(*entity))).id();
+                // commands.entity(*entity).add_child(child);
             }
             AtomLabelEvent::Delete => {
                 debug!("delete label ...");
@@ -142,7 +146,7 @@ mod panel {
         mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         mut writer: EventWriter<crate::net::StreamEvent>,
-        mut current_frame: ResMut<crate::molecule::CurrentFrame>,
+        mut current_frame: ResMut<crate::player::CurrentFrame>,
     ) {
         let ctx = contexts.ctx_mut();
 

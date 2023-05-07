@@ -109,9 +109,9 @@ impl MoleculeTrajectory {
 // [[file:../bevy.note::20198b2d][20198b2d]]
 fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<CurrentFrame>) {
     if keyboard_input.just_pressed(KeyCode::Right) {
-        current_frame.0 += 1;
+        current_frame.next();
     } else if keyboard_input.just_pressed(KeyCode::Left) {
-        current_frame.0 -= 1;
+        current_frame.prev();
     }
 }
 
@@ -124,7 +124,7 @@ fn traj_animation_player(
     let nframe = traj.mols.len() as isize;
     // % operator not work for negative number. We need Euclidean division.
     // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
-    let ci = current_frame.0.rem_euclid(nframe);
+    let ci = current_frame.index().rem_euclid(nframe);
     for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
         if *fi == ci as usize {
             *visibility = Visibility::Visible;
@@ -136,17 +136,7 @@ fn traj_animation_player(
 // 20198b2d ends here
 
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
-#[derive(Resource, Clone, Debug, Default)]
-pub struct CurrentFrame(isize);
-impl CurrentFrame {
-    pub fn next(&mut self) {
-        self.0 += 1;
-    }
-
-    pub fn prev(&mut self) {
-        self.0 -= 1;
-    }
-}
+use crate::player::CurrentFrame;
 
 pub fn spawn_molecules(
     mut commands: Commands,
@@ -214,7 +204,7 @@ impl MoleculePlugin {
 impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.traj.clone())
-            .insert_resource(CurrentFrame(0))
+            .insert_resource(CurrentFrame::default())
             .insert_resource(VisilizationState::default())
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera);

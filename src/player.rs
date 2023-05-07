@@ -1,15 +1,15 @@
-// [[file:../bevy.note::*imports][imports:1]]
+// [[file:../bevy.note::25b936c5][25b936c5]]
 use bevy::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 
-fn visibility(visible: bool) -> Visibility {
+pub fn visibility(visible: bool) -> Visibility {
     if visible {
         Visibility::Visible
     } else {
         Visibility::Hidden
     }
 }
-// imports:1 ends here
+// 25b936c5 ends here
 
 // [[file:../bevy.note::14379cd1][14379cd1]]
 fn create_line_segment(
@@ -40,6 +40,24 @@ fn create_line_segment(
     }
 }
 // 14379cd1 ends here
+
+// [[file:../bevy.note::52696eea][52696eea]]
+#[derive(Resource, Clone, Debug, Default)]
+pub struct CurrentFrame(isize);
+impl CurrentFrame {
+    pub fn index(&self) -> isize {
+        self.0
+    }
+
+    pub fn next(&mut self) {
+        self.0 += 1;
+    }
+
+    pub fn prev(&mut self) {
+        self.0 -= 1;
+    }
+}
+// 52696eea ends here
 
 // [[file:../bevy.note::5cf783bd][5cf783bd]]
 fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
