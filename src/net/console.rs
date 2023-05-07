@@ -53,7 +53,7 @@ fn load_command(
                     commands.entity(molecule_entity).despawn_recursive();
                 }
                 // show molecule on received
-                crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials);
+                crate::player::spawn_molecule(mol, 0, &mut commands, &mut meshes, &mut materials);
                 // recenter view
                 if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
                     let center = mol.center_of_geometry().map(|x| x as f32);

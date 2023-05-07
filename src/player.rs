@@ -333,7 +333,6 @@ pub struct FrameIndex(pub usize);
 
 pub fn spawn_molecule(
     mol: &gchemol_core::Molecule,
-    visible: bool,
     frame_index: usize,
     mut commands: &mut Commands,
     mut meshes: &mut ResMut<Assets<Mesh>>,
@@ -347,7 +346,6 @@ pub fn spawn_molecule(
             // spawn atoms
             for (i, a) in mol.atoms() {
                 let mut atom = Atom::new(a);
-                atom.set_visible(visible);
                 let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
                 commands.spawn(atom_bundle).insert(AtomIndex(i));
             }
@@ -359,7 +357,6 @@ pub fn spawn_molecule(
                 let atom1 = Atom::new(ai);
                 let atom2 = Atom::new(aj);
                 let mut bond = Bond::new(atom1, atom2);
-                bond.set_visible(visible);
                 commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials));
             }
 

@@ -109,35 +109,6 @@ impl MoleculeTrajectory {
 }
 // c068ff9c ends here
 
-// [[file:../bevy.note::20198b2d][20198b2d]]
-fn play_animation(
-    traj: Res<MoleculeTrajectory>,
-    current_frame: Res<CurrentFrame>,
-    vis_state: Res<VisilizationState>,
-    mut visibility_query: Query<(&mut Visibility, &FrameIndex), With<crate::player::Molecule>>,
-) {
-    let nframe = traj.mols.len() as isize;
-    // % operator not work for negative number. We need Euclidean division.
-    // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
-    let ci = current_frame.0.rem_euclid(nframe);
-    for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
-        if *fi == ci as usize {
-            *visibility = Visibility::Visible;
-        } else {
-            *visibility = Visibility::Hidden;
-        }
-    }
-}
-
-fn frame_control(keyboard_input: Res<Input<KeyCode>>, mut current_frame: ResMut<CurrentFrame>) {
-    if keyboard_input.just_pressed(KeyCode::Right) {
-        current_frame.0 += 1;
-    } else if keyboard_input.just_pressed(KeyCode::Left) {
-        current_frame.0 -= 1;
-    }
-}
-// 20198b2d ends here
-
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 pub fn spawn_molecules(
     mut commands: Commands,
@@ -179,17 +150,7 @@ pub fn spawn_molecules(
 
     // create atoms and bonds
     for (fi, mol) in traj.mols.iter().enumerate() {
-        // only show the first molecule on startup
-        let visible = fi == 0;
-        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
-        // for (i, a) in mol.atoms() {
-        //     // create atom labels
-        //     let text = create_label(&asset_server, format!("{i}"), false);
-        //     commands
-        //         .spawn(text)
-        //         .insert(AtomLabel::new(parent_entity))
-        //         .insert(FrameIndex(fi));
-        // }
+        crate::player::spawn_molecule(mol, fi, &mut commands, &mut meshes, &mut materials);
     }
 }
 // 1c6c0570 ends here
