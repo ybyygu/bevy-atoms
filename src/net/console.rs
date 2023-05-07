@@ -40,24 +40,35 @@ fn load_command(
     mut materials: ResMut<Assets<StandardMaterial>>,
     molecule_query: Query<Entity, With<crate::player::Molecule>>,
     mut arcball_camera: Query<&mut PanOrbitCamera>,
+    mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
         match cmd {
             RemoteCommand::Load(mols) => {
-                // FIXME: rewrite
-                let mol = &mols[0];
-                info!("handle received mol: {}", mol.title());
-                // remove existing molecule
-                if let Ok(molecule_entity) = molecule_query.get_single() {
-                    info!("molecule removed");
-                    commands.entity(molecule_entity).despawn_recursive();
-                }
-                // show molecule on received
-                crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials);
-                // recenter view
-                if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
-                    let center = mol.center_of_geometry().map(|x| x as f32);
-                    pan_orbit.focus = center.into();
+                if mols.len() > 0 {
+                    let mol = &mols[0];
+                    info!("handle received mol: {}", mol.title());
+                    // remove existing molecule
+                    if let Ok(molecule_entity) = molecule_query.get_single() {
+                        info!("molecule removed");
+                        commands.entity(molecule_entity).despawn_recursive();
+                    }
+                    // show molecule on received
+                    // create atoms and bonds
+                    for (fi, mol) in mols.iter().enumerate() {
+                        // only show the first frame
+                        let visible = fi == 0;
+                        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
+                    }
+                    // recenter view
+                    if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
+                        let center = mol.center_of_geometry().map(|x| x as f32);
+                        pan_orbit.focus = center.into();
+                    }
+                    // also update trajecotry resource
+                    *traj = crate::molecule::MoleculeTrajectory { mols: mols.to_vec() };
+                } else {
+                    warn!("Received empty molecule list.");
                 }
                 break;
             }

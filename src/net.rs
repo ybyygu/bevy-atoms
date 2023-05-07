@@ -83,17 +83,9 @@ mod routes {
     use crossbeam_channel::{Receiver, Sender};
 
     #[axum::debug_handler]
-    async fn view_molecule(State(tx): State<RemoteCommandSender>, Json(mol): Json<Molecule>) -> Result<(), AppError> {
-        super::info!("handle client request: view-molecule mol: {}", mol.title());
-        let mols = vec![mol];
+    async fn view_molecule(State(tx): State<RemoteCommandSender>, Json(mols): Json<Vec<Molecule>>) -> Result<(), AppError> {
+        super::info!("handle client request: view {} molecules", mols.len());
         tx.send(RemoteCommand::Load(mols)).unwrap();
-        Ok(())
-    }
-
-    #[axum::debug_handler]
-    async fn delete_molecule(State(tx): State<RemoteCommandSender>) -> Result<(), AppError> {
-        super::info!("handle client request: delete molecule");
-        tx.send(RemoteCommand::Delete).unwrap();
         Ok(())
     }
 
@@ -104,8 +96,7 @@ mod routes {
 
         super::info!("start axum service ...");
         let app = Router::new()
-            .route("/view-molecule", post(view_molecule))
-            .route("/delete-molecule", post(delete_molecule))
+            .route("/view-molecules", post(view_molecule))
             .with_state(task_tx);
         axum::Server::bind(&"127.0.0.1:3039".parse().unwrap())
             .serve(app.into_make_service())
