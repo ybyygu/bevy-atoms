@@ -162,36 +162,38 @@ mod panel {
             ui.label("Available operations:");
             ui.separator();
             // open file dialog
-            if ui.button("Load …").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    use gchemol::io::prelude::*;
-                    if let Ok(mols) = gchemol::io::read(path) {
-                        let mols: Vec<_> = mols
-                            // create bonds if necessary
-                            .map(|mut m| {
-                                if m.nbonds() == 0 {
-                                    let lat = m.unbuild_crystal();
-                                    m.rebond();
-                                    m.lattice = lat;
-                                    info!("bonds created.");
-                                }
-                                m
-                            })
-                            .collect();
-                        let n = mols.len();
-                        let command = crate::net::RemoteCommand::Load(mols);
-                        writer.send(crate::net::StreamEvent(command));
-                        state.message = format!("{n} Molecules loaded.");
+            ui.horizontal(|ui| {
+                if ui.button("Load …").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        use gchemol::io::prelude::*;
+                        if let Ok(mols) = gchemol::io::read(path) {
+                            let mols: Vec<_> = mols
+                                // create bonds if necessary
+                                .map(|mut m| {
+                                    if m.nbonds() == 0 {
+                                        let lat = m.unbuild_crystal();
+                                        m.rebond();
+                                        m.lattice = lat;
+                                        info!("bonds created.");
+                                    }
+                                    m
+                                })
+                                .collect();
+                            let n = mols.len();
+                            let command = crate::net::RemoteCommand::Load(mols);
+                            writer.send(crate::net::StreamEvent(command));
+                            state.message = format!("{n} Molecules loaded.");
+                        }
                     }
                 }
-            }
-            // save file dialog
-            if ui.button("Save …").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    traj.save_as(path.as_ref());
-                    state.message = format!("Molecules saved to {path:?}");
+                // save file dialog
+                if ui.button("Save …").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        traj.save_as(path.as_ref());
+                        state.message = format!("Molecules saved to {path:?}");
+                    }
                 }
-            }
+            });
             // label atoms by serial numbers
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 if state.label_atoms_checked {
