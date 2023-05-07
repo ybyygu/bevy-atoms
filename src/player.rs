@@ -11,6 +11,34 @@ fn visibility(visible: bool) -> Visibility {
 }
 // imports:1 ends here
 
+// [[file:../bevy.note::14379cd1][14379cd1]]
+fn create_line_segment(
+    pi: Vec3,
+    pj: Vec3,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<StandardMaterial>>,
+    radius: f32,
+    color: Color,
+) -> PbrBundle {
+    let center = (pi + pj) / 2.0;
+    let dij = pj - pi;
+    let lij = dij.length();
+    let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
+    let transform = Transform::from_translation(center).with_rotation(rot);
+
+    PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cylinder {
+            radius,
+            height: lij,
+            ..default()
+        })),
+        material: materials.add(color.into()),
+        transform,
+        ..default()
+    }
+}
+// 14379cd1 ends here
+
 // [[file:../bevy.note::5cf783bd][5cf783bd]]
 fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
     // ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 2.0) as f32
@@ -238,26 +266,9 @@ impl BondBundle {
     pub fn new(bond: Bond, mut meshes: &mut ResMut<Assets<Mesh>>, mut materials: &mut ResMut<Assets<StandardMaterial>>) -> Self {
         let pi = bond.atom1.position;
         let pj = bond.atom2.position;
-        let center = (pi + pj) / 2.0;
-        let dij = pj - pi;
-        let lij = dij.length();
-        let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
-        let transform = Transform::from_translation(center).with_rotation(rot);
-        let visibility = visibility(bond.visible);
-        Self {
-            pbr: PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cylinder {
-                    radius: 0.07,
-                    height: lij,
-                    ..default()
-                })),
-                material: materials.add(Color::GRAY.into()),
-                transform,
-                visibility,
-                ..default()
-            },
-            bond,
-        }
+        let pbr = create_line_segment(pi, pj, meshes, materials, 0.07, Color::GRAY);
+
+        Self { pbr, bond }
     }
 }
 // 5a5c8b3f ends here
@@ -268,39 +279,8 @@ pub struct Molecule;
 // 3b90f445 ends here
 
 // [[file:../bevy.note::38660d10][38660d10]]
-#[derive(Bundle)]
-pub struct LineSegment {
-    pbr: PbrBundle,
-}
-
-impl LineSegment {
-    fn new(
-        pi: Vec3,
-        pj: Vec3,
-        mut meshes: &mut ResMut<Assets<Mesh>>,
-        mut materials: &mut ResMut<Assets<StandardMaterial>>,
-        radius: f32,
-        color: Color,
-    ) -> Self {
-        let center = (pi + pj) / 2.0;
-        let dij = pj - pi;
-        let lij = dij.length();
-        let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
-        let transform = Transform::from_translation(center).with_rotation(rot);
-        Self {
-            pbr: PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cylinder {
-                    radius,
-                    height: lij,
-                    ..default()
-                })),
-                material: materials.add(color.into()),
-                transform,
-                ..default()
-            },
-        }
-    }
-}
+#[derive(Clone, Debug, Component)]
+pub struct Lattice;
 
 fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
     let p = p.into();
@@ -311,7 +291,7 @@ fn create_lattice(
     lat: &gchemol_core::Lattice,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
-) -> [LineSegment; 12] {
+) -> [PbrBundle; 12] {
     let p0 = lat.to_cart([0.0, 0.0, 0.0]);
     let p1 = lat.to_cart([1.0, 0.0, 0.0]);
     let p2 = lat.to_cart([0.0, 1.0, 0.0]);
@@ -331,18 +311,18 @@ fn create_lattice(
 
     let radius = 0.03;
     [
-        LineSegment::new(p0, p1, meshes, materials, radius, Color::RED),
-        LineSegment::new(p0, p2, meshes, materials, radius, Color::YELLOW),
-        LineSegment::new(p0, p3, meshes, materials, radius, Color::BLUE),
-        LineSegment::new(p1, p4, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p1, p5, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p2, p4, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p2, p6, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p3, p5, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p3, p6, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p7, p4, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p7, p5, meshes, materials, radius, Color::WHITE),
-        LineSegment::new(p7, p6, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p0, p1, meshes, materials, radius, Color::RED),
+        create_line_segment(p0, p2, meshes, materials, radius, Color::YELLOW),
+        create_line_segment(p0, p3, meshes, materials, radius, Color::BLUE),
+        create_line_segment(p1, p4, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p1, p5, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p2, p4, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p2, p6, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p3, p5, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p3, p6, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p4, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p5, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p6, meshes, materials, radius, Color::WHITE),
     ]
 }
 // 38660d10 ends here
@@ -387,7 +367,7 @@ pub fn spawn_molecule(
             if let Some(lat) = mol.get_lattice() {
                 let vectors = create_lattice(lat, meshes, materials);
                 for v in vectors {
-                    commands.spawn(v);
+                    commands.spawn(v).insert(Lattice);
                 }
             }
         });
