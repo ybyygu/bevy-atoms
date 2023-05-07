@@ -45,8 +45,10 @@ fn create_line_segment(
 #[derive(Resource, Clone, Debug, Default)]
 pub struct CurrentFrame(isize);
 impl CurrentFrame {
-    pub fn index(&self) -> isize {
-        self.0
+    pub fn index(&self, nframes: usize) -> usize {
+        // % operator not work for negative number. We need Euclidean division.
+        // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
+        self.0.rem_euclid(nframes as isize) as usize
     }
 
     pub fn next(&mut self) {

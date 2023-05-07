@@ -221,11 +221,15 @@ mod panel {
 
         egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
             ui.horizontal(|ui| {
-                if ui.button("Next frame").clicked() {
-                    current_frame.next();
-                }
-                if ui.button("Prev frame").clicked() {
+                let nframes = traj.mols.len();
+                let iframe = current_frame.index(nframes);
+                if ui.button("Backward").clicked() {
                     current_frame.prev();
+                    state.message = format!("Frame {iframe}");
+                }
+                if ui.button("Forward").clicked() {
+                    current_frame.next();
+                    state.message = format!("Frame {iframe}");
                 }
             });
         });

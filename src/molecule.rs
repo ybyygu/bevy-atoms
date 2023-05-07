@@ -86,7 +86,7 @@ fn setup_lights(commands: &mut Commands) {
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
 #[derive(Resource, Clone, Debug, Default)]
 pub struct MoleculeTrajectory {
-    mols: Vec<gchemol_core::Molecule>,
+    pub mols: Vec<gchemol_core::Molecule>,
 }
 
 /// Visilization state
@@ -121,10 +121,8 @@ fn traj_animation_player(
     vis_state: Res<VisilizationState>,
     mut visibility_query: Query<(&mut Visibility, &FrameIndex)>,
 ) {
-    let nframe = traj.mols.len() as isize;
-    // % operator not work for negative number. We need Euclidean division.
-    // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
-    let ci = current_frame.index().rem_euclid(nframe);
+    let nframes = traj.mols.len();
+    let ci = current_frame.index(nframes);
     for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
         if *fi == ci as usize {
             *visibility = Visibility::Visible;
