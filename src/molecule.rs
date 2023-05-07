@@ -122,12 +122,13 @@ fn traj_animation_player(
     mut visibility_query: Query<(&mut Visibility, &FrameIndex)>,
 ) {
     let nframes = traj.mols.len();
-    let ci = current_frame.index(nframes);
-    for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
-        if *fi == ci as usize {
-            *visibility = Visibility::Visible;
-        } else {
-            *visibility = Visibility::Hidden;
+    if let Some(ci) = current_frame.index(nframes) {
+        for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
+            if *fi == ci as usize {
+                *visibility = Visibility::Visible;
+            } else {
+                *visibility = Visibility::Hidden;
+            }
         }
     }
 }
@@ -205,15 +206,9 @@ impl Plugin for MoleculePlugin {
             .insert_resource(CurrentFrame::default())
             .insert_resource(VisilizationState::default())
             .add_startup_system(spawn_molecules)
-            .add_system(update_light_with_camera);
-
-        match self.traj.mols.len() {
-            0 | 1 => {}
-            _ => {
-                // for animation
-                app.add_system(keyboard_animation_control).add_system(traj_animation_player);
-            }
-        }
+            .add_system(update_light_with_camera)
+            .add_system(keyboard_animation_control)
+            .add_system(traj_animation_player);
     }
 }
 // 8ec82258 ends here

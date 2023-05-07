@@ -97,14 +97,14 @@ fn handle_atom_label_events(
         match event {
             AtomLabelEvent::Create((entity, text)) => {
                 debug!("create label for entity {entity:?} with {text:?}");
+                // NOTE: visibility hierarchy not work here
+                // let child = commands.spawn((label, AtomLabel::new(*entity))).id();
+                // commands.entity(*entity).add_child(child);
                 let (_, iframe, vis) = frame_query.iter().find(|part| part.0 == *entity).unwrap();
                 if vis != Visibility::Hidden {
                     let label = create_label_text(&asset_server, text, true);
                     commands.spawn((label, AtomLabel::new(*entity))).insert(*iframe);
                 }
-                // NOTE: visibility hierarchy not work here
-                // let child = commands.spawn((label, AtomLabel::new(*entity))).id();
-                // commands.entity(*entity).add_child(child);
             }
             AtomLabelEvent::Delete => {
                 debug!("delete label ...");
@@ -225,14 +225,15 @@ mod panel {
         egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let nframes = traj.mols.len();
-                let iframe = current_frame.index(nframes);
-                if ui.button("Backward").clicked() {
-                    current_frame.prev();
-                    state.message = format!("Frame {iframe}");
-                }
-                if ui.button("Forward").clicked() {
-                    current_frame.next();
-                    state.message = format!("Frame {iframe}");
+                if let Some(iframe) = current_frame.index(nframes) {
+                    if ui.button("Backward").clicked() {
+                        current_frame.prev();
+                        state.message = format!("Frame {iframe}");
+                    }
+                    if ui.button("Forward").clicked() {
+                        current_frame.next();
+                        state.message = format!("Frame {iframe}");
+                    }
                 }
             });
         });

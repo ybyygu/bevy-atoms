@@ -45,10 +45,16 @@ fn create_line_segment(
 #[derive(Resource, Clone, Debug, Default)]
 pub struct CurrentFrame(pub isize);
 impl CurrentFrame {
-    pub fn index(&self, nframes: usize) -> usize {
-        // % operator not work for negative number. We need Euclidean division.
-        // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
-        self.0.rem_euclid(nframes as isize) as usize
+    pub fn index(&self, nframes: usize) -> Option<usize> {
+        // no trajecotry loaded
+        if nframes == 0 {
+            None
+        } else {
+            // % operator not work for negative number. We need Euclidean division.
+            // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
+            let n = self.0.rem_euclid(nframes as isize) as usize;
+            Some(n)
+        }
     }
 
     pub fn next(&mut self) {
