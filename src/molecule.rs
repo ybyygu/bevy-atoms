@@ -4,10 +4,7 @@
 use crate::player::*;
 
 use bevy::prelude::*;
-
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
-// for lattice
-use bevy_prototype_debug_lines::*;
 // a83ae206 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
@@ -146,7 +143,6 @@ pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut lines: ResMut<DebugLines>,
     asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
 ) {
@@ -185,7 +181,7 @@ pub fn spawn_molecules(
     for (fi, mol) in traj.mols.iter().enumerate() {
         // only show the first molecule on startup
         let visible = fi == 0;
-        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials, &mut lines);
+        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
         // for (i, a) in mol.atoms() {
         //     // create atom labels
         //     let text = create_label(&asset_server, format!("{i}"), false);
@@ -218,7 +214,6 @@ impl Plugin for MoleculePlugin {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame(0))
             .insert_resource(VisilizationState::default())
-            .add_plugin(DebugLinesPlugin::default())
             .add_system(update_light_with_camera)
             .add_startup_system(spawn_molecules);
 

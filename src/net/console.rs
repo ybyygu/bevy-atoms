@@ -38,7 +38,6 @@ fn load_command(
     mut reader: EventReader<StreamEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut lines: ResMut<bevy_prototype_debug_lines::DebugLines>,
     molecule_query: Query<Entity, With<crate::player::Molecule>>,
     mut arcball_camera: Query<&mut PanOrbitCamera>,
 ) {
@@ -54,7 +53,7 @@ fn load_command(
                     commands.entity(molecule_entity).despawn_recursive();
                 }
                 // show molecule on received
-                crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials, &mut lines);
+                crate::player::spawn_molecule(mol, true, 0, &mut commands, &mut meshes, &mut materials);
                 // recenter view
                 if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
                     let center = mol.center_of_geometry().map(|x| x as f32);

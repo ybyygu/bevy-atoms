@@ -51,7 +51,6 @@ bevy_mod_picking = "0.12.0"
 bevy_egui = "0.20"
 # wasm build panic issue: https://bevy-cheatbook.github.io/platforms/wasm/panic-console.html
 console_error_panic_hook = "0.1"
-bevy_prototype_debug_lines = { version = "0.10.1", features = ["3d"] }
 # bevy_console = "0.7.0"                                                 # command line UI
 # bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"], git = "https://github.com/Plonq/bevy_panorbit_camera" }
 bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"] }

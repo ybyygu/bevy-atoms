@@ -267,15 +267,51 @@ impl BondBundle {
 pub struct Molecule;
 // 3b90f445 ends here
 
-// [[file:../bevy.note::e6728461][e6728461]]
-use bevy_prototype_debug_lines::DebugLines;
+// [[file:../bevy.note::38660d10][38660d10]]
+#[derive(Bundle)]
+pub struct LineSegment {
+    pbr: PbrBundle,
+}
+
+impl LineSegment {
+    fn new(
+        pi: Vec3,
+        pj: Vec3,
+        mut meshes: &mut ResMut<Assets<Mesh>>,
+        mut materials: &mut ResMut<Assets<StandardMaterial>>,
+        radius: f32,
+        color: Color,
+    ) -> Self {
+        let center = (pi + pj) / 2.0;
+        let dij = pj - pi;
+        let lij = dij.length();
+        let rot = Quat::from_rotation_arc(Vec3::Y, dij.normalize());
+        let transform = Transform::from_translation(center).with_rotation(rot);
+        Self {
+            pbr: PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cylinder {
+                    radius,
+                    height: lij,
+                    ..default()
+                })),
+                material: materials.add(color.into()),
+                transform,
+                ..default()
+            },
+        }
+    }
+}
 
 fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
     let p = p.into();
     Vec3::new(p[0] as f32, p[1] as f32, p[2] as f32)
 }
 
-fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f32) {
+fn create_lattice(
+    lat: &gchemol_core::Lattice,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<StandardMaterial>>,
+) -> [LineSegment; 12] {
     let p0 = lat.to_cart([0.0, 0.0, 0.0]);
     let p1 = lat.to_cart([1.0, 0.0, 0.0]);
     let p2 = lat.to_cart([0.0, 1.0, 0.0]);
@@ -292,20 +328,24 @@ fn show_lattice(lat: &gchemol_core::Lattice, lines: &mut DebugLines, duration: f
     let p5 = as_vec3(p5);
     let p6 = as_vec3(p6);
     let p7 = as_vec3(p7);
-    lines.line_colored(p0, p1, duration, Color::RED);
-    lines.line_colored(p0, p2, duration, Color::YELLOW);
-    lines.line_colored(p0, p3, duration, Color::BLUE);
-    lines.line_colored(p1, p4, duration, Color::WHITE);
-    lines.line_colored(p1, p5, duration, Color::WHITE);
-    lines.line_colored(p2, p4, duration, Color::WHITE);
-    lines.line_colored(p2, p6, duration, Color::WHITE);
-    lines.line_colored(p3, p5, duration, Color::WHITE);
-    lines.line_colored(p3, p6, duration, Color::WHITE);
-    lines.line_colored(p7, p4, duration, Color::WHITE);
-    lines.line_colored(p7, p5, duration, Color::WHITE);
-    lines.line_colored(p7, p6, duration, Color::WHITE);
+
+    let radius = 0.03;
+    [
+        LineSegment::new(p0, p1, meshes, materials, radius, Color::RED),
+        LineSegment::new(p0, p2, meshes, materials, radius, Color::YELLOW),
+        LineSegment::new(p0, p3, meshes, materials, radius, Color::BLUE),
+        LineSegment::new(p1, p4, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p1, p5, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p2, p4, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p2, p6, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p3, p5, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p3, p6, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p7, p4, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p7, p5, meshes, materials, radius, Color::WHITE),
+        LineSegment::new(p7, p6, meshes, materials, radius, Color::WHITE),
+    ]
 }
-// e6728461 ends here
+// 38660d10 ends here
 
 // [[file:../bevy.note::d5c13162][d5c13162]]
 #[derive(Clone, Copy, Debug, Component)]
@@ -318,7 +358,6 @@ pub fn spawn_molecule(
     mut commands: &mut Commands,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
-    mut lines: &mut ResMut<DebugLines>,
 ) {
     commands
         .spawn(SpatialBundle::default())
@@ -346,7 +385,10 @@ pub fn spawn_molecule(
 
             // lattice
             if let Some(lat) = mol.get_lattice() {
-                show_lattice(lat, &mut lines, f32::MAX);
+                let vectors = create_lattice(lat, meshes, materials);
+                for v in vectors {
+                    commands.spawn(v);
+                }
             }
         });
 }
