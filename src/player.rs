@@ -43,7 +43,7 @@ fn create_line_segment(
 
 // [[file:../bevy.note::52696eea][52696eea]]
 #[derive(Resource, Clone, Debug, Default)]
-pub struct CurrentFrame(isize);
+pub struct CurrentFrame(pub isize);
 impl CurrentFrame {
     pub fn index(&self, nframes: usize) -> usize {
         // % operator not work for negative number. We need Euclidean division.
