@@ -1,20 +1,21 @@
-// [[file:../bevy.note::*imports][imports:1]]
+// [[file:../bevy.note::25b936c5][25b936c5]]
 use bevy::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 
-fn visibility(visible: bool) -> Visibility {
+pub fn visibility(visible: bool) -> Visibility {
     if visible {
         Visibility::Visible
     } else {
         Visibility::Hidden
     }
 }
-// imports:1 ends here
+// 25b936c5 ends here
 
 // [[file:../bevy.note::14379cd1][14379cd1]]
 fn create_line_segment(
     pi: Vec3,
     pj: Vec3,
+    visible: bool,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
     radius: f32,
@@ -32,12 +33,39 @@ fn create_line_segment(
             height: lij,
             ..default()
         })),
+        visibility: visibility(visible),
         material: materials.add(color.into()),
         transform,
         ..default()
     }
 }
 // 14379cd1 ends here
+
+// [[file:../bevy.note::52696eea][52696eea]]
+#[derive(Resource, Clone, Debug, Default)]
+pub struct CurrentFrame(pub isize);
+impl CurrentFrame {
+    pub fn index(&self, nframes: usize) -> Option<usize> {
+        // no trajecotry loaded
+        if nframes == 0 {
+            None
+        } else {
+            // % operator not work for negative number. We need Euclidean division.
+            // https://users.rust-lang.org/t/why-works-differently-between-rust-and-python/83911
+            let n = self.0.rem_euclid(nframes as isize) as usize;
+            Some(n)
+        }
+    }
+
+    pub fn next(&mut self) {
+        self.0 += 1;
+    }
+
+    pub fn prev(&mut self) {
+        self.0 -= 1;
+    }
+}
+// 52696eea ends here
 
 // [[file:../bevy.note::5cf783bd][5cf783bd]]
 fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
@@ -266,7 +294,7 @@ impl BondBundle {
     pub fn new(bond: Bond, mut meshes: &mut ResMut<Assets<Mesh>>, mut materials: &mut ResMut<Assets<StandardMaterial>>) -> Self {
         let pi = bond.atom1.position;
         let pj = bond.atom2.position;
-        let pbr = create_line_segment(pi, pj, meshes, materials, 0.07, Color::GRAY);
+        let pbr = create_line_segment(pi, pj, bond.visible, meshes, materials, 0.07, Color::GRAY);
 
         Self { pbr, bond }
     }
@@ -289,6 +317,7 @@ fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
 
 fn create_lattice(
     lat: &gchemol_core::Lattice,
+    visible: bool,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
 ) -> [PbrBundle; 12] {
@@ -311,18 +340,18 @@ fn create_lattice(
 
     let radius = 0.03;
     [
-        create_line_segment(p0, p1, meshes, materials, radius, Color::RED),
-        create_line_segment(p0, p2, meshes, materials, radius, Color::YELLOW),
-        create_line_segment(p0, p3, meshes, materials, radius, Color::BLUE),
-        create_line_segment(p1, p4, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p1, p5, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p2, p4, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p2, p6, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p3, p5, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p3, p6, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p7, p4, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p7, p5, meshes, materials, radius, Color::WHITE),
-        create_line_segment(p7, p6, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p0, p1, visible, meshes, materials, radius, Color::RED),
+        create_line_segment(p0, p2, visible, meshes, materials, radius, Color::YELLOW),
+        create_line_segment(p0, p3, visible, meshes, materials, radius, Color::BLUE),
+        create_line_segment(p1, p4, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p1, p5, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p2, p4, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p2, p6, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p3, p5, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p3, p6, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p4, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p5, visible, meshes, materials, radius, Color::WHITE),
+        create_line_segment(p7, p6, visible, meshes, materials, radius, Color::WHITE),
     ]
 }
 // 38660d10 ends here
@@ -339,17 +368,19 @@ pub fn spawn_molecule(
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
+    // let frame_name = Name::new(format!("frame-{frame_index}"));
+    let frame_name = FrameIndex(frame_index);
     commands
         .spawn(SpatialBundle::default())
         .insert(Molecule)
-        .insert(FrameIndex(frame_index))
+        // for animation control
         .with_children(|commands| {
             // spawn atoms
             for (i, a) in mol.atoms() {
                 let mut atom = Atom::new(a);
                 atom.set_visible(visible);
                 let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-                commands.spawn(atom_bundle).insert(AtomIndex(i));
+                commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(frame_name);
             }
 
             // add chemical bonds
@@ -360,14 +391,14 @@ pub fn spawn_molecule(
                 let atom2 = Atom::new(aj);
                 let mut bond = Bond::new(atom1, atom2);
                 bond.set_visible(visible);
-                commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials));
+                commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials)).insert(frame_name);
             }
 
             // lattice
             if let Some(lat) = mol.get_lattice() {
-                let vectors = create_lattice(lat, meshes, materials);
+                let vectors = create_lattice(lat, visible, meshes, materials);
                 for v in vectors {
-                    commands.spawn(v).insert(Lattice);
+                    commands.spawn(v).insert(Lattice).insert(frame_name);
                 }
             }
         });

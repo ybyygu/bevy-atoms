@@ -26,7 +26,7 @@ impl AtomLabel {
 // 02f2343f ends here
 
 // [[file:../bevy.note::4c72e4a9][4c72e4a9]]
-fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>) -> TextBundle {
+fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, visible: bool) -> TextBundle {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let style = Style {
         position_type: PositionType::Absolute,
@@ -45,7 +45,7 @@ fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>) -
     .with_text_alignment(TextAlignment::Center)
     .with_style(style);
 
-    text.visibility = Visibility::Visible;
+    text.visibility = crate::player::visibility(visible);
     text
 }
 
@@ -91,13 +91,20 @@ fn handle_atom_label_events(
     asset_server: Res<AssetServer>,
     mut events: EventReader<AtomLabelEvent>,
     mut label_query: Query<Entity, With<AtomLabel>>,
+    mut frame_query: Query<(Entity, &crate::player::FrameIndex, &Visibility), With<crate::player::Atom>>,
 ) {
     for event in events.iter() {
         match event {
             AtomLabelEvent::Create((entity, text)) => {
                 debug!("create label for entity {entity:?} with {text:?}");
-                let label = create_label_text(&asset_server, text);
-                commands.spawn((label, AtomLabel::new(*entity)));
+                // NOTE: visibility hierarchy not work here
+                // let child = commands.spawn((label, AtomLabel::new(*entity))).id();
+                // commands.entity(*entity).add_child(child);
+                let (_, iframe, vis) = frame_query.iter().find(|part| part.0 == *entity).unwrap();
+                if vis != Visibility::Hidden {
+                    let label = create_label_text(&asset_server, text, true);
+                    commands.spawn((label, AtomLabel::new(*entity))).insert(*iframe);
+                }
             }
             AtomLabelEvent::Delete => {
                 debug!("delete label ...");
@@ -142,6 +149,7 @@ mod panel {
         mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         mut writer: EventWriter<crate::net::StreamEvent>,
+        mut current_frame: ResMut<crate::player::CurrentFrame>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -154,36 +162,38 @@ mod panel {
             ui.label("Available operations:");
             ui.separator();
             // open file dialog
-            if ui.button("Load …").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    use gchemol::io::prelude::*;
-                    if let Ok(mols) = gchemol::io::read(path) {
-                        let mols: Vec<_> = mols
-                            // create bonds if necessary
-                            .map(|mut m| {
-                                if m.nbonds() == 0 {
-                                    let lat = m.unbuild_crystal();
-                                    m.rebond();
-                                    m.lattice = lat;
-                                    info!("bonds created.");
-                                }
-                                m
-                            })
-                            .collect();
-                        let n = mols.len();
-                        let command = crate::net::RemoteCommand::Load(mols);
-                        writer.send(crate::net::StreamEvent(command));
-                        state.message = format!("{n} Molecules loaded.");
+            ui.horizontal(|ui| {
+                if ui.button("Load …").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        use gchemol::io::prelude::*;
+                        if let Ok(mols) = gchemol::io::read(path) {
+                            let mols: Vec<_> = mols
+                                // create bonds if necessary
+                                .map(|mut m| {
+                                    if m.nbonds() == 0 {
+                                        let lat = m.unbuild_crystal();
+                                        m.rebond();
+                                        m.lattice = lat;
+                                        info!("bonds created.");
+                                    }
+                                    m
+                                })
+                                .collect();
+                            let n = mols.len();
+                            let command = crate::net::RemoteCommand::Load(mols);
+                            writer.send(crate::net::StreamEvent(command));
+                            state.message = format!("{n} Molecules loaded.");
+                        }
                     }
                 }
-            }
-            // save file dialog
-            if ui.button("Save …").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    traj.save_as(path.as_ref());
-                    state.message = format!("Molecules saved to {path:?}");
+                // save file dialog
+                if ui.button("Save …").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        traj.save_as(path.as_ref());
+                        state.message = format!("Molecules saved to {path:?}");
+                    }
                 }
-            }
+            });
             // label atoms by serial numbers
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 if state.label_atoms_checked {
@@ -214,9 +224,24 @@ mod panel {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
 
+        egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                let nframes = traj.mols.len();
+                if let Some(iframe) = current_frame.index(nframes) {
+                    if ui.button("Backward").clicked() {
+                        current_frame.prev();
+                        state.message = format!("Frame {iframe}");
+                    }
+                    if ui.button("Forward").clicked() {
+                        current_frame.next();
+                        state.message = format!("Frame {iframe}");
+                    }
+                }
+            });
+        });
+
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
             ui.label(&state.message);
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
     }
 }
