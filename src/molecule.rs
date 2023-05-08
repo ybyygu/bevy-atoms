@@ -141,7 +141,6 @@ pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut animations: ResMut<Assets<AnimationClip>>,
     asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
 ) {
