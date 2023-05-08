@@ -24,6 +24,13 @@ fn exit_on_q(keyboard_input: Res<Input<KeyCode>>, mut app_exit_events: ResMut<Ev
     }
 }
 
+fn set_window_title(mut window: Query<&mut Window>) {
+    if let Ok(mut window) = window.get_single_mut() {
+        let version = env!("CARGO_PKG_VERSION");
+        window.title = format!("gchemol view {version}");
+    }
+}
+
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
 /// A simple molecule viewer
@@ -69,8 +76,7 @@ impl ViewerCli {
         };
         let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
-        app
-            .add_plugin(EguiPlugin)
+        app.add_plugin(EguiPlugin)
             .add_plugins(DefaultPickingPlugins)
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
@@ -79,7 +85,7 @@ impl ViewerCli {
             .add_plugin(mol_plugin)
             .add_plugin(crate::ui::LabelPlugin::default())
             .add_plugin(crate::net::ServerPlugin)
-            // .add_system(bevy::window::close_on_esc)
+            .add_startup_system(set_window_title)
             .add_system(exit_on_q)
             .add_system(bevy::window::exit_on_primary_closed)
             .run();
