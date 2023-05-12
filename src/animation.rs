@@ -4,13 +4,6 @@ use bevy::utils::Duration;
 // 8bf0b235 ends here
 
 // [[file:../bevy.note::5e188eb0][5e188eb0]]
-#[derive(Default, Debug, Clone)]
-pub struct AnimationState {
-    timer: Timer,
-    frames: Vec<usize>,
-    frame_index: usize,
-}
-
 #[derive(Eq, PartialEq, Default)]
 pub enum AnimationMode {
     #[default]
@@ -19,44 +12,68 @@ pub enum AnimationMode {
     Palindrome,
 }
 
-/// Animation controls
-#[derive(Component, Default)]
+#[derive(Resource)]
 pub struct AnimationPlayer {
-    paused: bool,
-
+    /// Current frame index when play animation. For simplicity
+    /// without considering num of frames, we allow `current_frame` to
+    /// be negative or larger than the number of frames.
+    current_frame: isize,
+    timer: Timer,
     mode: AnimationMode,
 }
+// 5e188eb0 ends here
 
+// [[file:../bevy.note::73b1c5cd][73b1c5cd]]
 impl AnimationPlayer {
+    pub fn new(interval: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(interval, TimerMode::Repeating),
+            current_frame: 0,
+            mode: AnimationMode::default(),
+        }
+    }
+
     /// Pause the animation
     pub fn pause(&mut self) {
-        self.paused = true;
+        self.timer.pause();
     }
 
     /// Unpause the animation
     pub fn resume(&mut self) {
-        self.paused = false;
+        self.timer.unpause();
     }
 
     /// Is the animation paused
     pub fn is_paused(&self) -> bool {
-        self.paused
+        self.timer.paused()
     }
 }
 
+impl Default for AnimationPlayer {
+    fn default() -> Self {
+        Self::new(0.2)
+    }
+}
+// 73b1c5cd ends here
+
+// [[file:../bevy.note::439d4eea][439d4eea]]
 // examples/animation/animated_fox.rs
-fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut animation_player: Query<&mut AnimationPlayer>) {
-    if let Ok(mut player) = animation_player.get_single_mut() {
-        if keyboard_input.just_pressed(KeyCode::Space) {
-            if player.is_paused() {
-                player.resume();
-            } else {
-                player.pause();
-            }
+fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut player: ResMut<AnimationPlayer>) {
+    if keyboard_input.just_pressed(KeyCode::Space) {
+        if player.is_paused() {
+            player.resume();
+        } else {
+            player.timer.pause();
         }
     }
 }
-// 5e188eb0 ends here
+
+fn play_animation(time: Res<Time>, mut player: ResMut<AnimationPlayer>) {
+    if !player.timer.tick(time.delta()).just_finished() {
+        player.current_frame += 1;
+    };
+}
+// 439d4eea ends here
 
 // [[file:../bevy.note::ec994bf0][ec994bf0]]
 #[derive(Component)]
@@ -86,23 +103,6 @@ pub fn toggle_visibility(time: Res<Time>, mut query: Query<(&mut ToggleVisibilit
     }
 }
 // ec994bf0 ends here
-
-// [[file:../bevy.note::d116ad14][d116ad14]]
-#[derive(Debug, Component)]
-pub struct LoopedAnimationTimer(Timer);
-
-impl LoopedAnimationTimer {
-    pub fn new(interval: Duration) -> Self {
-        LoopedAnimationTimer(Timer::new(interval, TimerMode::Repeating))
-    }
-}
-
-impl Default for LoopedAnimationTimer {
-    fn default() -> Self {
-        LoopedAnimationTimer::new(Duration::from_millis(100))
-    }
-}
-// d116ad14 ends here
 
 // [[file:../bevy.note::84e75727][84e75727]]
 pub struct AnimationPlugin;
