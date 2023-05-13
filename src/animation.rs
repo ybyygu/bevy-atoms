@@ -14,21 +14,23 @@ pub enum AnimationMode {
 
 #[derive(Resource)]
 pub struct AnimationPlayer {
-    /// Current frame index when play animation. For simplicity
-    /// without considering num of frames, we allow `current_frame` to
-    /// be negative or larger than the number of frames.
-    current_frame: isize,
+    /// Total number of frames
+    nframes: usize,
     timer: Timer,
     mode: AnimationMode,
 }
+
+#[derive(Clone, Copy, Debug, Component)]
+pub struct Frame(pub usize);
 // 5e188eb0 ends here
 
 // [[file:../bevy.note::73b1c5cd][73b1c5cd]]
 impl AnimationPlayer {
-    pub fn new(interval: f32) -> Self {
+    pub fn new(nframes: usize, interval: f32) -> Self {
+        assert_ne!(nframes, 0);
         Self {
+            nframes,
             timer: Timer::from_seconds(interval, TimerMode::Repeating),
-            current_frame: 0,
             mode: AnimationMode::default(),
         }
     }
@@ -48,12 +50,6 @@ impl AnimationPlayer {
         self.timer.paused()
     }
 }
-
-impl Default for AnimationPlayer {
-    fn default() -> Self {
-        Self::new(0.2)
-    }
-}
 // 73b1c5cd ends here
 
 // [[file:../bevy.note::439d4eea][439d4eea]]
@@ -68,33 +64,19 @@ fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut player: R
     }
 }
 
-fn play_animation(time: Res<Time>, mut player: ResMut<AnimationPlayer>) {
+fn play_animation(
+    time: Res<Time>,
+    mut player: ResMut<AnimationPlayer>,
+    mut current_frame: Local<usize>,
+    mut visibility_query: Query<(&mut Visibility, &Frame)>,
+) {
     if !player.timer.tick(time.delta()).just_finished() {
-        player.current_frame += 1;
-    };
-}
-// 439d4eea ends here
-
-// [[file:../bevy.note::ec994bf0][ec994bf0]]
-#[derive(Component)]
-pub struct ToggleVisibility(pub Timer);
-
-impl Default for ToggleVisibility {
-    fn default() -> Self {
-        ToggleVisibility(Timer::new(Duration::from_millis(40), TimerMode::Repeating))
-    }
-}
-
-fn is_hidden(vis: &Visibility) -> bool {
-    matches!(vis, &Visibility::Hidden)
-}
-
-pub fn toggle_visibility(time: Res<Time>, mut query: Query<(&mut ToggleVisibility, &mut Visibility)>) {
-    for (mut timer, mut visibility) in query.iter_mut() {
-        timer.0.tick(time.delta());
-
-        if timer.0.just_finished() {
-            if is_hidden(&visibility) {
+        // increase frame
+        *current_frame += 1;
+        // toggle visibility
+        let ci = *current_frame % player.nframes;
+        for (mut visibility, Frame(fi)) in visibility_query.iter_mut() {
+            if *fi == ci {
                 *visibility = Visibility::Visible;
             } else {
                 *visibility = Visibility::Hidden;
@@ -102,7 +84,7 @@ pub fn toggle_visibility(time: Res<Time>, mut query: Query<(&mut ToggleVisibilit
         }
     }
 }
-// ec994bf0 ends here
+// 439d4eea ends here
 
 // [[file:../bevy.note::84e75727][84e75727]]
 pub struct AnimationPlugin;
