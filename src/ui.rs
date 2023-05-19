@@ -146,7 +146,7 @@ mod panel {
         mut commands: Commands,
         mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        mut atoms_query: Query<(Entity, &AtomIndex), With<crate::player::Atom>>,
+        mut atoms_query: Query<(Entity, &AtomIndex, &crate::player::Atom)>,
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         mut writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::player::CurrentFrame>,
@@ -210,8 +210,11 @@ mod panel {
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 if state.label_atoms_checked {
                     info!("create atoms labels ...");
-                    for (entity, atom_index) in atoms_query.iter() {
-                        label_events.send(AtomLabelEvent::Create((entity, format!("{}", atom_index.0))));
+                    for (entity, atom_index, atom) in atoms_query.iter() {
+                        let label = atom.get_label(atom_index.0);
+                        if !label.is_empty() {
+                            label_events.send(AtomLabelEvent::Create((entity, label)));
+                        }
                     }
                 } else {
                     info!("delete atoms labels ...");

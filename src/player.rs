@@ -196,12 +196,15 @@ fn get_atom_color(atom: &gchemol_core::Atom) -> Color {
 #[derive(Clone, Copy, Debug, Component)]
 pub struct AtomIndex(pub usize);
 
+/// Represent the displayed atom in 3D viewer
 #[derive(Clone, Debug, Component)]
 pub struct Atom {
     color: Color,
+    visible: bool,
     radius: f32,
     position: Vec3,
-    visible: bool,
+    /// The text of label to be displayed
+    label: Option<String>,
 }
 
 impl Atom {
@@ -215,7 +218,13 @@ impl Atom {
             color,
             radius,
             visible: true,
+            label: a.get_label().map(|x| x.to_owned()),
         }
+    }
+
+    /// Return the text of atom label.
+    pub fn get_label(&self, sn: usize) -> String {
+        self.label.clone().unwrap_or(sn.to_string())
     }
 
     pub fn set_visible(&mut self, visible: bool) {
