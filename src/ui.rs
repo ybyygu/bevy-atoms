@@ -164,7 +164,19 @@ mod panel {
             // open file dialog
             ui.horizontal(|ui| {
                 if ui.button("Load …").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("auto detect", &["*"])
+                        .add_filter("*.xyz", &["xyz", "pxyz"])
+                        .add_filter("*.mol2", &["mol2"])
+                        .add_filter("*.pdf", &["pdb", "ent"])
+                        .add_filter("*.mol", &["mol", "sdf"])
+                        .add_filter("*.cif", &["cif"])
+                        .add_filter("*.xsd", &["xsd"])
+                        .add_filter("*.cjson", &["cjson"])
+                        .add_filter("Gaussian (*.com, *.gjf)", &["com", "gjf"])
+                        .add_filter("VASP (*.vasp)", &["vasp"])
+                        .pick_file()
+                    {
                         use gchemol::io::prelude::*;
                         if let Ok(mols) = gchemol::io::read(path) {
                             let mols: Vec<_> = mols
