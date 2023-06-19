@@ -158,54 +158,90 @@ mod panel {
         style.visuals = egui::Visuals::light();
         ctx.set_style(style);
 
-        egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
-            ui.label("Available operations:");
-            ui.separator();
-            // open file dialog
-            ui.horizontal(|ui| {
-                if ui.button("Load …").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("auto detect", &["*"])
-                        .add_filter("*.xyz", &["xyz", "pxyz"])
-                        .add_filter("*.mol2", &["mol2"])
-                        .add_filter("*.pdf", &["pdb", "ent"])
-                        .add_filter("*.mol", &["mol", "sdf"])
-                        .add_filter("*.cif", &["cif"])
-                        .add_filter("*.xsd", &["xsd"])
-                        .add_filter("*.cjson", &["cjson"])
-                        .add_filter("Gaussian (*.com, *.gjf)", &["com", "gjf"])
-                        .add_filter("VASP (*.vasp)", &["vasp"])
-                        .pick_file()
-                    {
-                        use gchemol::io::prelude::*;
-                        if let Ok(mols) = gchemol::io::read(path) {
-                            let mols: Vec<_> = mols
-                                // create bonds if necessary
-                                .map(|mut m| {
-                                    if m.nbonds() == 0 {
-                                        let lat = m.unbuild_crystal();
-                                        m.rebond();
-                                        m.lattice = lat;
-                                        info!("bonds created.");
-                                    }
-                                    m
-                                })
-                                .collect();
-                            let n = mols.len();
-                            let command = crate::net::RemoteCommand::Load(mols);
-                            writer.send(crate::net::StreamEvent(command));
-                            state.message = format!("{n} Molecules loaded.");
+        egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Load…").clicked() {
+                        if let Some(path) = rfd::FileDialog::new()
+                            .add_filter("auto detect", &["*"])
+                            .add_filter("*.xyz", &["xyz", "pxyz"])
+                            .add_filter("*.mol2", &["mol2"])
+                            .add_filter("*.pdf", &["pdb", "ent"])
+                            .add_filter("*.mol", &["mol", "sdf"])
+                            .add_filter("*.cif", &["cif"])
+                            .add_filter("*.xsd", &["xsd"])
+                            .add_filter("*.cjson", &["cjson"])
+                            .add_filter("Gaussian (*.com, *.gjf)", &["com", "gjf"])
+                            .add_filter("VASP (*.vasp)", &["vasp"])
+                            .pick_file()
+                        {
+                            use gchemol::io::prelude::*;
+                            if let Ok(mols) = gchemol::io::read(path) {
+                                let mols: Vec<_> = mols
+                                    // create bonds if necessary
+                                    .map(|mut m| {
+                                        if m.nbonds() == 0 {
+                                            let lat = m.unbuild_crystal();
+                                            m.rebond();
+                                            m.lattice = lat;
+                                            info!("bonds created.");
+                                        }
+                                        m
+                                    })
+                                    .collect();
+                                let n = mols.len();
+                                let command = crate::net::RemoteCommand::Load(mols);
+                                writer.send(crate::net::StreamEvent(command));
+                                state.message = format!("{n} Molecules loaded.");
+                            }
                         }
                     }
-                }
-                // save file dialog
-                if ui.button("Save …").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_file() {
-                        traj.save_as(path.as_ref());
-                        state.message = format!("Molecules saved to {path:?}");
+                    if ui.button("Save…").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_file() {
+                            traj.save_as(path.as_ref());
+                            state.message = format!("Molecules saved to {path:?}");
+                        }
+                    }
+                    if ui.button("Quit").clicked() {
+                        // …
+                    }
+                });
+                ui.menu_button("Edit", |ui| {
+                    if ui.button("rebond").clicked() {
+                        // …
+                    }
+                });
+                ui.menu_button("Submit", |ui| {
+                    if ui.button("VASP…").clicked() {
+                        // …
+                    }
+                    if ui.button("ORCA…").clicked() {
+                        // …
+                    }
+                    if ui.button("Gaussian…").clicked() {
+                        // …
+                    }
+                });
+            });
+
+            ui.horizontal(|ui| {
+                let nframes = traj.mols.len();
+                if let Some(iframe) = current_frame.index(nframes) {
+                    if ui.button("Backward").clicked() {
+                        current_frame.prev();
+                        state.message = format!("Frame {iframe}");
+                    }
+                    if ui.button("Forward").clicked() {
+                        current_frame.next();
+                        state.message = format!("Frame {iframe}");
                     }
                 }
             });
+        });
+
+        egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
+            ui.label("Available actions");
+            ui.separator();
             // label atoms by serial numbers
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 if state.label_atoms_checked {
@@ -237,22 +273,6 @@ mod panel {
                 state.message = "no implemented yet".into();
             }
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        });
-
-        egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                let nframes = traj.mols.len();
-                if let Some(iframe) = current_frame.index(nframes) {
-                    if ui.button("Backward").clicked() {
-                        current_frame.prev();
-                        state.message = format!("Frame {iframe}");
-                    }
-                    if ui.button("Forward").clicked() {
-                        current_frame.next();
-                        state.message = format!("Frame {iframe}");
-                    }
-                }
-            });
         });
 
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
