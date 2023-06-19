@@ -2,6 +2,10 @@
 use bevy::prelude::*;
 // imports:1 ends here
 
+// [[file:../bevy.note::8d1285a1][8d1285a1]]
+mod submit;
+// 8d1285a1 ends here
+
 // [[file:../bevy.note::02f2343f][02f2343f]]
 /// Text label attached to an Atom
 #[derive(Component)]
@@ -24,6 +28,23 @@ impl AtomLabel {
     }
 }
 // 02f2343f ends here
+
+// [[file:../bevy.note::13082bcf][13082bcf]]
+#[derive(Debug, Resource)]
+pub struct UiState {
+    label_atoms_checked: bool,
+    message: String,
+}
+
+impl Default for UiState {
+    fn default() -> Self {
+        Self {
+            label_atoms_checked: false,
+            message: "Tip: You can press `q` to exit.".to_owned(),
+        }
+    }
+}
+// 13082bcf ends here
 
 // [[file:../bevy.note::4c72e4a9][4c72e4a9]]
 fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, visible: bool) -> TextBundle {
@@ -119,26 +140,13 @@ fn handle_atom_label_events(
 
 // [[file:../bevy.note::bccb8119][bccb8119]]
 mod panel {
+    use super::UiState;
+
     use crate::player::AtomIndex;
     use crate::ui::AtomLabelEvent;
 
     use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
     use bevy_egui::{egui, EguiContexts, EguiPlugin};
-
-    #[derive(Debug, Resource)]
-    pub struct UiState {
-        label_atoms_checked: bool,
-        message: String,
-    }
-
-    impl Default for UiState {
-        fn default() -> Self {
-            Self {
-                label_atoms_checked: false,
-                message: "Tip: You can press `q` to exit.".to_owned(),
-            }
-        }
-    }
 
     pub fn side_panels(
         mut state: ResMut<UiState>,
@@ -203,16 +211,44 @@ mod panel {
                         }
                     }
                     if ui.button("Quit").clicked() {
-                        // …
+                        //
                     }
                 });
                 ui.menu_button("Edit", |ui| {
                     if ui.button("rebond").clicked() {
                         // …
                     }
+                    // Remove all molecules
+                    if ui.button("Clear Molecule").clicked() {
+                        if let Ok(molecule_entity) = molecule_query.get_single() {
+                            info!("remove molecule");
+                            commands.entity(molecule_entity).despawn_recursive();
+                            // also remove atom labels
+                            label_events.send(AtomLabelEvent::Delete);
+                        } else {
+                            state.message = "No molecule present".into();
+                        }
+                    }
                 });
-                ui.menu_button("Submit", |ui| {
+                ui.menu_button("View", |ui| {
+                    // Put molecule in the center of view
+                    if ui.button("recenter").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                });
+                ui.menu_button("Task", |ui| {
+                    if ui.button("Geometry Optimization").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                    if ui.button("Phonon").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                });
+                ui.menu_button("Compute Engine", |ui| {
                     if ui.button("VASP…").clicked() {
+                        // …
+                    }
+                    if ui.button("LAMMPS…").clicked() {
                         // …
                     }
                     if ui.button("ORCA…").clicked() {
@@ -238,7 +274,6 @@ mod panel {
                 }
             });
         });
-
         egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
             ui.label("Available actions");
             ui.separator();
@@ -257,24 +292,8 @@ mod panel {
                     label_events.send(AtomLabelEvent::Delete);
                 }
             }
-            // Remove all molecules
-            if ui.button("Clear Molecule").clicked() {
-                if let Ok(molecule_entity) = molecule_query.get_single() {
-                    info!("remove molecule");
-                    commands.entity(molecule_entity).despawn_recursive();
-                    // also remove atom labels
-                    label_events.send(AtomLabelEvent::Delete);
-                } else {
-                    state.message = "No molecule present".into();
-                }
-            }
-            // Put molecule in the center of view
-            if ui.button("Recenter Molecule").clicked() {
-                state.message = "no implemented yet".into();
-            }
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
-
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
             ui.label(&state.message);
         });
@@ -293,7 +312,7 @@ impl Plugin for LabelPlugin {
         use bevy_egui::EguiPlugin;
 
         app.add_event::<AtomLabelEvent>()
-            .init_resource::<panel::UiState>()
+            .init_resource::<UiState>()
             .add_system(panel::side_panels)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
