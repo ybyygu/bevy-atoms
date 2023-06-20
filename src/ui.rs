@@ -76,7 +76,7 @@ fn update_atom_labels_with_camera(
     camera_query: Query<(&Camera, &GlobalTransform)>,
     mut label_style_query: Query<(&AtomLabel, &mut Style, &CalculatedSize, &ComputedVisibility)>,
     transform_query: Query<&Transform>,
-    windows: Query<&Window>,
+    windows: Query<&Window, With<bevy::window::PrimaryWindow>>,
 ) {
     if let Ok((camera, camera_transform)) = camera_query.get_single() {
         let window = windows.single();
@@ -246,7 +246,14 @@ mod panel {
                 });
                 ui.menu_button("Compute Engine", |ui| {
                     if ui.button("VASP…").clicked() {
-                        // …
+                        // Spawn a second window
+                        let second_window_id = commands
+                            .spawn(Window {
+                                title: "Second window".to_owned(),
+                                present_mode: bevy::window::PresentMode::AutoVsync,
+                                ..Default::default()
+                            })
+                            .id();
                     }
                     if ui.button("LAMMPS…").clicked() {
                         // …
@@ -274,6 +281,7 @@ mod panel {
                 }
             });
         });
+
         egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
             ui.label("Available actions");
             ui.separator();
@@ -294,12 +302,33 @@ mod panel {
             }
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
+
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
             ui.label(&state.message);
         });
     }
 }
 // bccb8119 ends here
+
+// [[file:../bevy.note::50cf0041][50cf0041]]
+mod input {
+    use bevy::prelude::*;
+    use bevy::window::PrimaryWindow;
+    use bevy_egui::{egui, EguiContext};
+
+    pub fn input_generator_window_system(mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>) {
+        let Ok(mut ctx) = egui_ctx.get_single_mut() else { return; };
+        egui::Window::new("Second Window").vscroll(true).show(ctx.get_mut(), |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Write something else: ");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Shared input: ");
+            });
+        });
+    }
+}
+// 50cf0041 ends here
 
 // [[file:../bevy.note::f9bfb184][f9bfb184]]
 #[derive(Debug, Clone, Default)]
@@ -314,6 +343,7 @@ impl Plugin for LabelPlugin {
         app.add_event::<AtomLabelEvent>()
             .init_resource::<UiState>()
             .add_system(panel::side_panels)
+            .add_system(input::input_generator_window_system)
             .add_system(handle_atom_label_events)
             .add_system(update_atom_labels_with_camera);
     }
