@@ -46,6 +46,25 @@ impl Default for UiState {
 }
 // 13082bcf ends here
 
+// [[file:../bevy.note::31ecf2a0][31ecf2a0]]
+/// possible ui actions
+enum Action {
+    /// Nothing to do
+    None,
+    /// Load trajectory from file
+    Load,
+    /// Save trajectory to file
+    Save,
+    /// Clear loaded molecules
+    Clear,
+    /// Create label for each atom
+    LabelAtoms,
+}
+
+#[derive(Debug, Default, Clone)]
+struct UiApp {}
+// 31ecf2a0 ends here
+
 // [[file:../bevy.note::4c72e4a9][4c72e4a9]]
 fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, visible: bool) -> TextBundle {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
@@ -138,9 +157,106 @@ fn handle_atom_label_events(
 }
 // f1cac934 ends here
 
+// [[file:../bevy.note::3fa34d4c][3fa34d4c]]
+impl UiApp {
+    fn load_trajectory(
+        &mut self,
+        traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        mut state: ResMut<UiState>,
+        mut writer: EventWriter<crate::net::StreamEvent>,
+    ) {
+        if let Some(path) = rfd::FileDialog::new()
+            .add_filter("auto detect", &["*"])
+            .add_filter("*.xyz", &["xyz", "pxyz"])
+            .add_filter("*.mol2", &["mol2"])
+            .add_filter("*.pdf", &["pdb", "ent"])
+            .add_filter("*.mol", &["mol", "sdf"])
+            .add_filter("*.cif", &["cif"])
+            .add_filter("*.xsd", &["xsd"])
+            .add_filter("*.cjson", &["cjson"])
+            .add_filter("Gaussian (*.com, *.gjf)", &["com", "gjf"])
+            .add_filter("VASP (*.vasp)", &["vasp"])
+            .pick_file()
+        {
+            use gchemol::io::prelude::*;
+            if let Ok(mols) = gchemol::io::read(path) {
+                let mols: Vec<_> = mols
+                    // create bonds if necessary
+                    .map(|mut m| {
+                        if m.nbonds() == 0 {
+                            let lat = m.unbuild_crystal();
+                            m.rebond();
+                            m.lattice = lat;
+                            info!("bonds created.");
+                        }
+                        m
+                    })
+                    .collect();
+                let n = mols.len();
+                let command = crate::net::RemoteCommand::Load(mols);
+                writer.send(crate::net::StreamEvent(command));
+                state.message = format!("{n} Molecules loaded.");
+            }
+        }
+    }
+
+    fn save_trajectory(&mut self, traj: ResMut<crate::molecule::MoleculeTrajectory>, mut state: ResMut<UiState>) {
+        if let Some(path) = rfd::FileDialog::new().pick_file() {
+            traj.save_as(path.as_ref());
+            state.message = format!("Molecules saved to {path:?}");
+        }
+    }
+}
+// 3fa34d4c ends here
+
+// [[file:../bevy.note::e26673e2][e26673e2]]
+impl UiApp {
+    fn clear_molecules(
+        &mut self,
+        mut commands: Commands,
+        mut state: ResMut<UiState>,
+        mut label_events: EventWriter<AtomLabelEvent>,
+        mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    ) {
+        if let Ok(molecule_entity) = molecule_query.get_single() {
+            info!("remove molecule");
+            commands.entity(molecule_entity).despawn_recursive();
+            // also remove atom labels
+            label_events.send(AtomLabelEvent::Delete);
+        } else {
+            state.message = "No molecule present".into();
+        }
+    }
+}
+// e26673e2 ends here
+
+// [[file:../bevy.note::ed37221a][ed37221a]]
+impl UiApp {
+    fn label_atoms(
+        &mut self,
+        mut state: ResMut<UiState>,
+        mut label_events: EventWriter<AtomLabelEvent>,
+        mut atoms_query: Query<(Entity, &crate::player::AtomIndex, &crate::player::Atom)>,
+    ) {
+        if state.label_atoms_checked {
+            info!("create atoms labels ...");
+            for (entity, atom_index, atom) in atoms_query.iter() {
+                let label = atom.get_label(atom_index.0);
+                if !label.is_empty() {
+                    label_events.send(AtomLabelEvent::Create((entity, label)));
+                }
+            }
+        } else {
+            info!("delete atoms labels ...");
+            label_events.send(AtomLabelEvent::Delete);
+        }
+    }
+}
+// ed37221a ends here
+
 // [[file:../bevy.note::bccb8119][bccb8119]]
 mod panel {
-    use super::UiState;
+    use super::{Action, UiApp, UiState};
 
     use crate::player::AtomIndex;
     use crate::ui::AtomLabelEvent;
@@ -166,52 +282,21 @@ mod panel {
         style.visuals = egui::Visuals::light();
         ctx.set_style(style);
 
+        let mut action = Action::None;
+        let mut app = UiApp::default();
         egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Load…").clicked() {
-                        if let Some(path) = rfd::FileDialog::new()
-                            .add_filter("auto detect", &["*"])
-                            .add_filter("*.xyz", &["xyz", "pxyz"])
-                            .add_filter("*.mol2", &["mol2"])
-                            .add_filter("*.pdf", &["pdb", "ent"])
-                            .add_filter("*.mol", &["mol", "sdf"])
-                            .add_filter("*.cif", &["cif"])
-                            .add_filter("*.xsd", &["xsd"])
-                            .add_filter("*.cjson", &["cjson"])
-                            .add_filter("Gaussian (*.com, *.gjf)", &["com", "gjf"])
-                            .add_filter("VASP (*.vasp)", &["vasp"])
-                            .pick_file()
-                        {
-                            use gchemol::io::prelude::*;
-                            if let Ok(mols) = gchemol::io::read(path) {
-                                let mols: Vec<_> = mols
-                                    // create bonds if necessary
-                                    .map(|mut m| {
-                                        if m.nbonds() == 0 {
-                                            let lat = m.unbuild_crystal();
-                                            m.rebond();
-                                            m.lattice = lat;
-                                            info!("bonds created.");
-                                        }
-                                        m
-                                    })
-                                    .collect();
-                                let n = mols.len();
-                                let command = crate::net::RemoteCommand::Load(mols);
-                                writer.send(crate::net::StreamEvent(command));
-                                state.message = format!("{n} Molecules loaded.");
-                            }
-                        }
+                    if ui.button("🗁 Load …").on_hover_text("Load molecules from file").clicked() {
+                        action = Action::Load;
+                        ui.close_menu();
                     }
-                    if ui.button("Save…").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_file() {
-                            traj.save_as(path.as_ref());
-                            state.message = format!("Molecules saved to {path:?}");
-                        }
+                    if ui.button("💾 Save…").clicked() {
+                        action = Action::Save;
+                        ui.close_menu();
                     }
-                    if ui.button("Quit").clicked() {
-                        //
+                    if ui.button("✖ Quit").clicked() {
+                        ui.close_menu();
                     }
                 });
                 ui.menu_button("Edit", |ui| {
@@ -220,14 +305,8 @@ mod panel {
                     }
                     // Remove all molecules
                     if ui.button("Clear Molecule").clicked() {
-                        if let Ok(molecule_entity) = molecule_query.get_single() {
-                            info!("remove molecule");
-                            commands.entity(molecule_entity).despawn_recursive();
-                            // also remove atom labels
-                            label_events.send(AtomLabelEvent::Delete);
-                        } else {
-                            state.message = "No molecule present".into();
-                        }
+                        action = Action::Clear;
+                        ui.close_menu();
                     }
                 });
                 ui.menu_button("View", |ui| {
@@ -246,6 +325,7 @@ mod panel {
                 });
                 ui.menu_button("Compute Engine", |ui| {
                     if ui.button("VASP…").clicked() {
+                        ui.close_menu();
                         // Spawn a second window
                         let second_window_id = commands
                             .spawn(Window {
@@ -287,18 +367,7 @@ mod panel {
             ui.separator();
             // label atoms by serial numbers
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
-                if state.label_atoms_checked {
-                    info!("create atoms labels ...");
-                    for (entity, atom_index, atom) in atoms_query.iter() {
-                        let label = atom.get_label(atom_index.0);
-                        if !label.is_empty() {
-                            label_events.send(AtomLabelEvent::Create((entity, label)));
-                        }
-                    }
-                } else {
-                    info!("delete atoms labels ...");
-                    label_events.send(AtomLabelEvent::Delete);
-                }
+                action = Action::LabelAtoms;
             }
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
@@ -306,6 +375,15 @@ mod panel {
         egui::TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
             ui.label(&state.message);
         });
+
+        match action {
+            Action::None => {}
+            Action::Load => app.load_trajectory(traj, state, writer),
+            Action::Save => app.save_trajectory(traj, state),
+            Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
+            Action::LabelAtoms => app.label_atoms(state, label_events, atoms_query),
+            _ => {}
+        }
     }
 }
 // bccb8119 ends here
