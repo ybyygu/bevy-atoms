@@ -3,7 +3,7 @@ use bevy::prelude::*;
 // imports:1 ends here
 
 // [[file:../bevy.note::8d1285a1][8d1285a1]]
-mod submit;
+mod compute;
 // 8d1285a1 ends here
 
 // [[file:../bevy.note::02f2343f][02f2343f]]
