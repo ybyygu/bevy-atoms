@@ -315,6 +315,11 @@ mod panel {
                         state.message = "no implemented yet".into();
                     }
                 });
+                ui.menu_button("Tools", |ui| {
+                    if ui.button("Periodic table").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                });
                 ui.menu_button("Task", |ui| {
                     if ui.button("Geometry Optimization").clicked() {
                         state.message = "no implemented yet".into();
