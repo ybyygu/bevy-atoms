@@ -5,8 +5,8 @@ Global Parameters
  LREAL    = .FALSE.             !Projection operators: automatic
  ENCUT    =  {{ENCUT or 400}}   !Cut-off energy for plane wave basis set, in eV
  #PREC    =  Accurate           !Precision level: Normal or Accurate, set Accurate when perform structure lattice relaxation calculation
- LWAVE    = {{LWAVE or .F.}}    !Write WAVECAR or not
- LCHARG   = {{LCHARG or .F.}}   !Write CHGCAR or not
+ LWAVE    = {{'.T.' if LWAVE or '.F.'}}    !Write WAVECAR or not
+ LCHARG   = {{'.T.' if LCHARG else '.F.'}}  !Write CHGCAR or not
  ADDGRID  = .TRUE.              !Increase grid, helps GGA convergence
  #NELECT  =                     !Need set it manually for charged system
  #LVTOT   = .TRUE.              !Write total electrostatic potential into LOCPOT or not
@@ -30,9 +30,5 @@ Static Calculation
  HFSCREEN = 0.2
  AEXX=0.25
  AGGAX=0.75
- AGGAC=1.0 
+ AGGAC=1.0
  ALDAC=1.0
-  
-
- 
- 
