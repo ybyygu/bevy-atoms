@@ -5,7 +5,7 @@ use gut::prelude::*;
 // 9c9c603b ends here
 
 // [[file:../../bevy.note::7ae276e4][7ae276e4]]
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "UPPERCASE"))]
 struct Settings {
     // general
@@ -34,10 +34,43 @@ struct Settings {
 
     // output verbosity
     nwrite: usize,
-    // magnetization output
-    lorbit: usize,
     lwave: bool,
     lcharg: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            // general
+            encut: 400,
+            // non-spin polarised DFT
+            ispin: 1,
+
+            // electronic relaxation
+            ismear: 0,
+            // smearing value in eV
+            sigma: 0.05,
+            // max electronic SCF steps
+            nelm: 60,
+            // min electronic SCF steps
+            nelmin: 5,
+            ediff: 1E-08,
+
+            // useful ionic relaxation
+            nsw: 100,
+            ibrion: 2,
+            isif: 2,
+            ediffg: -0.01,
+
+            // symmetry
+            isym: 0,
+
+            // output verbosity
+            nwrite: 2,
+            lwave: false,
+            lcharg: false,
+        }
+    }
 }
 // 7ae276e4 ends here
 
@@ -191,7 +224,11 @@ impl State {
                 .show(ui, |ui| {
                     ui.hyperlink_to("EDIFF", "https://www.vasp.at/wiki/index.php/EDIFF")
                         .on_hover_text("EDIFF specifies the global break condition for the electronic SC-loop.");
-                    ui.add(egui::DragValue::new(&mut self.settings.ediff).speed(1E-6));
+                    ui.add(
+                        egui::DragValue::new(&mut self.settings.ediff)
+                            .custom_formatter(|n, _| format!("{n:-8.0E}"))
+                            .speed(0),
+                    );
                     ui.hyperlink_to("SIGMA", "https://www.vasp.at/wiki/index.php/SIGMA")
                         .on_hover_text("specifies the width of the smearing in eV");
                     ui.add(
@@ -221,15 +258,14 @@ impl State {
                     ui.add(egui::DragValue::new(&mut self.settings.nsw).speed(1));
                     ui.hyperlink_to("EDIFFG", "https://www.vasp.at/wiki/index.php/EDIFFG")
                         .on_hover_text("defines the break condition for the ionic relaxation loop");
-                    ui.add(egui::DragValue::new(&mut self.settings.ediffg).speed(1E-3));
-                    ui.end_row();
+                    ui.add(egui::DragValue::new(&mut self.settings.ediffg).speed(0.01));
                     ui.hyperlink_to("ISYM", "https://www.vasp.at/wiki/index.php/ISYM")
                         .on_hover_text("determines the way VASP treats symmetry");
                     ui.add(egui::DragValue::new(&mut self.settings.isym).clamp_range(-1..=3).speed(1));
                 });
         });
 
-        ui.collapsing("Output", |ui| {
+        ui.collapsing("Output control", |ui| {
             egui::Grid::new("vasp_grid_output")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
@@ -238,11 +274,9 @@ impl State {
                     ui.hyperlink_to("NWRITE", "https://www.vasp.at/wiki/index.php/NWRITE")
                         .on_hover_text("determines how much will be written to the file OUTCAR ('verbosity tag')");
                     ui.add(egui::DragValue::new(&mut self.settings.nwrite).clamp_range(0..=4).speed(1));
-                    ui.end_row();
                     ui.hyperlink_to("LWAVE", "https://www.vasp.at/wiki/index.php/LWAVE")
                         .on_hover_text("determines whether the wavefunctions are written to the WAVECAR file");
                     ui.toggle_value(&mut self.settings.lwave, "write WAVECAR");
-                    ui.end_row();
                     ui.hyperlink_to("LCHARG", "https://www.vasp.at/wiki/index.php/LCHARG")
                         .on_hover_text("determines whether the charge densities");
                     ui.toggle_value(&mut self.settings.lcharg, "write CHGCAR/CHG");
