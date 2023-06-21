@@ -316,8 +316,19 @@ mod panel {
                     }
                 });
                 ui.menu_button("Tools", |ui| {
-                    if ui.button("Periodic table").clicked() {
+                    if ui.button("Periodic table…").clicked() {
                         state.message = "no implemented yet".into();
+                    }
+                    if ui.button("Input files generator…").clicked() {
+                        ui.close_menu();
+                        // Spawn a second window
+                        let second_window_id = commands
+                            .spawn(Window {
+                                title: "Input files generator".to_owned(),
+                                present_mode: bevy::window::PresentMode::AutoVsync,
+                                ..Default::default()
+                            })
+                            .id();
                     }
                 });
                 ui.menu_button("Task", |ui| {
@@ -326,28 +337,6 @@ mod panel {
                     }
                     if ui.button("Phonon").clicked() {
                         state.message = "no implemented yet".into();
-                    }
-                });
-                ui.menu_button("Compute Engine", |ui| {
-                    if ui.button("VASP…").clicked() {
-                        ui.close_menu();
-                        // Spawn a second window
-                        let second_window_id = commands
-                            .spawn(Window {
-                                title: "Second window".to_owned(),
-                                present_mode: bevy::window::PresentMode::AutoVsync,
-                                ..Default::default()
-                            })
-                            .id();
-                    }
-                    if ui.button("LAMMPS…").clicked() {
-                        // …
-                    }
-                    if ui.button("ORCA…").clicked() {
-                        // …
-                    }
-                    if ui.button("Gaussian…").clicked() {
-                        // …
                     }
                 });
             });
@@ -395,20 +384,19 @@ mod panel {
 
 // [[file:../bevy.note::50cf0041][50cf0041]]
 mod input {
+    use super::compute::State;
     use bevy::prelude::*;
     use bevy::window::PrimaryWindow;
     use bevy_egui::{egui, EguiContext};
 
-    pub fn input_generator_window_system(mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>) {
+    pub fn input_generator_window_system(
+        mut state: ResMut<super::compute::State>,
+        mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>,
+    ) {
         let Ok(mut ctx) = egui_ctx.get_single_mut() else { return; };
-        egui::Window::new("Second Window").vscroll(true).show(ctx.get_mut(), |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Write something else: ");
-            });
-            ui.horizontal(|ui| {
-                ui.label("Shared input: ");
-            });
-        });
+        let ctx = ctx.get_mut();
+        ctx.set_visuals(egui::Visuals::light()); // Switch to light mode
+        state.show(ctx);
     }
 }
 // 50cf0041 ends here
@@ -425,6 +413,7 @@ impl Plugin for LabelPlugin {
 
         app.add_event::<AtomLabelEvent>()
             .init_resource::<UiState>()
+            .init_resource::<compute::State>()
             .add_system(panel::side_panels)
             .add_system(input::input_generator_window_system)
             .add_system(handle_atom_label_events)
