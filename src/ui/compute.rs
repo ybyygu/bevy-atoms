@@ -17,14 +17,20 @@ enum Code {
 // 52d286c4 ends here
 
 // [[file:../../bevy.note::ba17983a][ba17983a]]
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq, Deserialize, Serialize, Resource)]
 pub struct State {
     code: Code,
+    vasp_state: super::vasp::State,
 }
 
 impl Default for State {
     fn default() -> Self {
-        Self { code: Code::default() }
+        Self {
+            code: Code::default(),
+            vasp_state: super::vasp::State::default(),
+        }
     }
 }
 // ba17983a ends here
@@ -62,6 +68,9 @@ impl State {
         ui.separator();
 
         match self.code {
+            Code::Vasp => {
+                self.vasp_state.show(ui);
+            }
             Code::Gaussian => {
                 // 格线对齐
                 egui::Grid::new("my_grid")
@@ -79,9 +88,6 @@ impl State {
             }
             Code::Orca => {
                 // self.orca_state.show(ui);
-            }
-            Code::Vasp => {
-                ui.label("VASP: Under Construction!");
             }
             _ => {
                 ui.label("Under Construction!");

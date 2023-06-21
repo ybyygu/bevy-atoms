@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 // [[file:../bevy.note::8d1285a1][8d1285a1]]
 mod compute;
+mod vasp;
 // 8d1285a1 ends here
 
 // [[file:../bevy.note::02f2343f][02f2343f]]
