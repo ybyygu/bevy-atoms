@@ -50,6 +50,7 @@ impl Default for UiState {
 
 // [[file:../bevy.note::31ecf2a0][31ecf2a0]]
 /// possible ui actions
+#[derive(Debug, Clone)]
 enum Action {
     /// Nothing to do
     None,
@@ -61,6 +62,8 @@ enum Action {
     Clear,
     /// Create label for each atom
     LabelAtoms,
+    /// Remove lattice
+    UnbuildCrystal,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -293,9 +296,11 @@ mod panel {
                 ui.menu_button("File", |ui| {
                     if ui.button("🗁 Load …").on_hover_text("Load molecules from file").clicked() {
                         action = Action::Load;
+                        ui.close_menu();
                     }
                     if ui.button("💾 Save…").clicked() {
                         action = Action::Save;
+                        ui.close_menu();
                     }
                     if ui.button("✖ Quit").clicked() {
                         app_exit_events.send(AppExit);
@@ -327,10 +332,7 @@ mod panel {
                 });
                 ui.menu_button("Crystal", |ui| {
                     if ui.button("Unbuild crystal").clicked() {
-                        // FIXME: need respawn molecules
-                        for m in traj.mols.iter_mut() {
-                            m.unbuild_crystal();
-                        }
+                        action = Action::UnbuildCrystal;
                     }
                     if ui.button("Edit unit cell…").clicked() {
                         state.message = "no implemented yet".into();
@@ -367,20 +369,6 @@ mod panel {
                     }
                 });
             });
-
-            ui.horizontal(|ui| {
-                let nframes = traj.mols.len();
-                if let Some(iframe) = current_frame.index(nframes) {
-                    if ui.button("Backward").clicked() {
-                        current_frame.prev();
-                        state.message = format!("Frame {iframe}");
-                    }
-                    if ui.button("Forward").clicked() {
-                        current_frame.next();
-                        state.message = format!("Frame {iframe}");
-                    }
-                }
-            });
         });
 
         egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
@@ -390,6 +378,21 @@ mod panel {
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 action = Action::LabelAtoms;
             }
+            // show animation control button
+            let nframes = traj.mols.len();
+            if let Some(iframe) = current_frame.index(nframes) {
+                ui.horizontal(|ui| {
+                    if ui.button("Backward").clicked() {
+                        current_frame.prev();
+                        state.message = format!("Frame {iframe}");
+                    }
+                    if ui.button("Forward").clicked() {
+                        current_frame.next();
+                        state.message = format!("Frame {iframe}");
+                    }
+                });
+            }
+
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
 
@@ -403,7 +406,9 @@ mod panel {
             Action::Save => app.save_trajectory(traj, state),
             Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
             Action::LabelAtoms => app.label_atoms(state, label_events, atoms_query),
-            _ => {}
+            _ => {
+                state.message = format!("handler for action {action:?} is not implemented yet");
+            }
         }
     }
 }
