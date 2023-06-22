@@ -111,7 +111,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            current_template: "sp/INCAR.jinja".to_owned(),
+            current_template: "custom".to_owned(),
             input_template: String::new(),
             rendered_input: String::new(),
         }
@@ -144,13 +144,15 @@ impl State {
             dbg!();
             let mut s = include_str!("../../tests/files/vasp-templates/sp/INCAR.jinja");
             let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
-            let templates: HashMap<String, String> = files
+            let mut templates: HashMap<String, String> = files
                 .map(|f| {
                     let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
                     let tpl_txt = gut::fs::read_file(f).unwrap();
                     (tpl_key, tpl_txt)
                 })
                 .collect();
+            // allow user custom template
+            templates.insert("custom".into(), String::new());
             info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
             templates
         })
@@ -160,8 +162,24 @@ impl State {
         let templates = Self::templates();
 
         ui.horizontal(|ui| {
-            // clipboard button
-            let tooltip = "Click to copy generated input";
+            ui.label("Render template:")
+                .on_hover_text("Select predefined input templates. Swithc to `custom` for edit.");
+            egui::ComboBox::from_id_source("vasp-template")
+                .width(200.0)
+                .selected_text(&self.current_template)
+                .show_ui(ui, |ui| {
+                    for t in templates.keys() {
+                        ui.selectable_value(&mut self.current_template, t.to_string(), t);
+                    }
+                });
+            // minijinja syntax reference
+            ui.hyperlink_to(
+                "Template Syntax Reference",
+                "https://docs.rs/minijinja/latest/minijinja/syntax/index.html",
+            );
+
+            // action button for render and copy to clipboard
+            let tooltip = "Click to copy generated input to clipboard";
             if ui.button("📋 Render & Copy").on_hover_text(tooltip).clicked() {
                 self.rendered_input = render_template(&self.input_template, &self.settings).unwrap_or_default();
                 match render_template(&self.input_template, &self.settings) {
@@ -174,20 +192,6 @@ impl State {
                 }
                 ui.output_mut(|o| o.copied_text = self.rendered_input.clone());
             }
-
-            ui.label("Render template:");
-            egui::ComboBox::from_id_source("orca-template")
-                .width(200.0)
-                .selected_text(&self.current_template)
-                .show_ui(ui, |ui| {
-                    for t in templates.keys() {
-                        ui.selectable_value(&mut self.current_template, t.to_string(), t);
-                    }
-                });
-            ui.hyperlink_to(
-                "Syntax Reference",
-                "https://docs.rs/minijinja/latest/minijinja/syntax/index.html",
-            )
         });
 
         ui.separator();
@@ -247,7 +251,6 @@ impl State {
             ui.hyperlink_to("ENCUT", "https://www.vasp.at/wiki/index.php/ENCUT")
                 .on_hover_text("specifies the cutoff energy for the plane-wave-basis set in eV");
             ui.add(egui::DragValue::new(&mut self.settings.encut).speed(10).suffix(" eV"));
-            ui.end_row();
             ui.hyperlink_to("ISPIN", "https://www.vasp.at/wiki/index.php/ISPIN")
                 .on_hover_text("ISPIN specifies spin polarization");
             ui.selectable_value(&mut self.settings.ispin, ISpin::NonSpinPolarized, "non-spin-polarized");
@@ -305,7 +308,6 @@ impl State {
                         );
                     ui.selectable_value(&mut self.settings.isym, Some(0), "No Symmetry")
                         .on_hover_text("Switches off the use of symmetry. If selected, ISYM=0");
-
                     ui.end_row();
                     ui.hyperlink_to("ISIF", "https://www.vasp.at/wiki/index.php/ISIF")
                         .on_hover_text("determines whether the stress tensor is calculated");
