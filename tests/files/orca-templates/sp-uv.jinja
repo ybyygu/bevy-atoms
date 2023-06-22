@@ -1,0 +1,33 @@
+# method, basis set, ...
+! {{method}} {{basis_set or "def2-TZVP"}} {{scf_type or ""}} def2/J {{ri or ""}}
+# other optional parameters
+! {{symmetry or "NoUseSym"}} {{scf_convergence or "tightscf"}} {{dft_grid or "defgrid3"}} {{dispersion or ""}}
+
+%TDDFT
+   NROOTS   50        # The number of desired roots
+   tda      false     # Important for accuracy
+END
+
+%pal nprocs 36 end
+%maxcore 5000
+
+!CPCM
+%cpcm
+  # https://depts.washington.edu/eooptic/linkfiles/dielectric_chart%5B1%5D.pdf
+  # Chlorobenzene
+  epsilon 5.62
+  refrac 1.5248
+end
+
+# for resolving scf convergence problems
+! KDIIS SOSCF
+#! SlowConv
+%scf
+  maxiter 500
+  Shift Shift 0.1 ErrOff 0.1 end
+end
+
+#%scf maxiter 500 end
+
+# charge and multiplicity
+* xyzfile {{charge}} {{multiplicity}} orca-input.xyz

@@ -1,0 +1,24 @@
+# method, basis set, ...
+! UKS {{method or "PBE0" }} IGLO-III SOMF(1X) def2/J {{ri or ""}}
+! TightSCF DefGrid3
+! g-tensor
+! CPCM
+%cpcm
+  epsilon 8.93
+  refrac 1.424
+end
+
+%pal nprocs 36 end
+%maxcore 3000
+
+%eprnmr
+    dtensor SSANDSO
+    dss uno
+end
+
+%basis
+newGTO Fe "CP(PPP)" end
+end
+
+# charge and multiplicity
+* xyzfile {{charge}} {{multiplicity}} orca-input.xyz

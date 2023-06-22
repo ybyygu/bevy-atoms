@@ -1,0 +1,26 @@
+# https://git.rwth-aachen.de/krewald/mossbauerprediction
+! {{method}} {{basis_set or "def2-SVP"}} {{scf_type or ""}} def2/J {{ri or ""}}
+! TightSCF defgrid3
+
+# other optional parameters
+! {{symmetry or "NoUseSym"}} {{scf_convergence or ""}} {{dft_grid or ""}} {{dispersion or ""}}
+
+! KDIIS Slowconv
+
+# for nodes in queue "dft"
+%pal nprocs 36 end
+%maxcore 5000
+
+%scf maxiter 500
+  shift shift 1.0 erroff 0.2 end
+end
+
+%basis
+newGTO Fe "CP(PPP)" end
+end
+
+* xyzfile 0 1 orca-input.xyz
+
+%eprnmr
+  nuclei = all Fe {fgrad, rho}
+end
