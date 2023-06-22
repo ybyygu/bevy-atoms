@@ -317,6 +317,31 @@ mod panel {
                         state.message = "no implemented yet".into();
                     }
                 });
+                ui.menu_button("Select", |ui| {
+                    if ui.button("Select all").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                    if ui.button("Select none").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                });
+                ui.menu_button("Crystal", |ui| {
+                    if ui.button("Unbuild crystal").clicked() {
+                        // FIXME: need respawn molecules
+                        for m in traj.mols.iter_mut() {
+                            m.unbuild_crystal();
+                        }
+                    }
+                    if ui.button("Edit unit cell…").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                    if ui.button("Wrap atoms to unit cell").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                    if ui.button("Build supercell…").clicked() {
+                        state.message = "no implemented yet".into();
+                    }
+                });
                 ui.menu_button("Tools", |ui| {
                     if ui.button("Periodic table…").clicked() {
                         state.message = "no implemented yet".into();
