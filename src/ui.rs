@@ -263,6 +263,7 @@ mod panel {
     use crate::player::AtomIndex;
     use crate::ui::AtomLabelEvent;
 
+    use bevy::app::AppExit;
     use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
     use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
@@ -276,6 +277,7 @@ mod panel {
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         mut writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::player::CurrentFrame>,
+        mut app_exit_events: ResMut<Events<AppExit>>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -291,14 +293,12 @@ mod panel {
                 ui.menu_button("File", |ui| {
                     if ui.button("🗁 Load …").on_hover_text("Load molecules from file").clicked() {
                         action = Action::Load;
-                        ui.close_menu();
                     }
                     if ui.button("💾 Save…").clicked() {
                         action = Action::Save;
-                        ui.close_menu();
                     }
                     if ui.button("✖ Quit").clicked() {
-                        ui.close_menu();
+                        app_exit_events.send(AppExit);
                     }
                 });
                 ui.menu_button("Edit", |ui| {
