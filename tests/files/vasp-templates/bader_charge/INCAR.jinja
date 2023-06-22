@@ -5,7 +5,7 @@ Global Parameters
  LREAL    = .FALSE.             !Projection operators: automatic
  ENCUT    =  {{ENCUT or 400}}   !Cut-off energy for plane wave basis set, in eV
  #PREC    =  Accurate           !Precision level: Normal or Accurate, set Accurate when perform structure lattice relaxation calculation
- LWAVE    = {{LWAVE or .F.}}    !Write WAVECAR or not
+ LWAVE    = {{'.T.' if LWAVE else '.F.'}}  !Write WAVECAR or not
  LCHARG   = .TRUE.              !Write CHGCAR or not
  ADDGRID  = .TRUE.              !Increase grid, helps GGA convergence
  #NELECT  =                     !Need set it manually for charged system

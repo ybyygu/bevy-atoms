@@ -78,7 +78,6 @@ impl Default for Settings {
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct State {
     settings: Settings,
-    templates: Vec<String>,
     current_template: String,
     rendered_input: String,
     input_template: String,
@@ -88,12 +87,6 @@ impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            templates: vec![
-                "sp/INCAR.jinja".to_owned(),
-                "opt/INCAR.jinja".to_owned(),
-                "freq/INCAR.jinja".to_owned(),
-                "custom".to_owned(),
-            ],
             current_template: "sp/INCAR.jinja".to_owned(),
             input_template: String::new(),
             rendered_input: String::new(),
@@ -103,6 +96,12 @@ impl Default for State {
 // d7d12e5e ends here
 
 // [[file:../../bevy.note::6785c6e2][6785c6e2]]
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
+// the templates loaded from files
+static TEMPLATES: OnceLock<HashMap<String, String>> = OnceLock::new();
+
 fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> {
     use minijinja::{context, Environment};
 
@@ -115,7 +114,27 @@ fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> 
 }
 
 impl State {
+    fn templates() -> &'static HashMap<String, String> {
+        let tpl_root_dir: &std::path::Path = "tests/files/vasp-templates".as_ref();
+        TEMPLATES.get_or_init(|| {
+            dbg!();
+            let mut s = include_str!("../../tests/files/vasp-templates/sp/INCAR.jinja");
+            let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
+            let templates: HashMap<String, String> = files
+                .map(|f| {
+                    let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
+                    let tpl_txt = gut::fs::read_file(f).unwrap();
+                    (tpl_key, tpl_txt)
+                })
+                .collect();
+            info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
+            templates
+        })
+    }
+
     fn show_template_selection(&mut self, ui: &mut Ui) {
+        let templates = Self::templates();
+
         ui.horizontal(|ui| {
             // clipboard button
             let tooltip = "Click to copy generated input";
@@ -137,7 +156,7 @@ impl State {
                 .width(200.0)
                 .selected_text(&self.current_template)
                 .show_ui(ui, |ui| {
-                    for t in self.templates.iter() {
+                    for t in templates.keys() {
                         ui.selectable_value(&mut self.current_template, t.to_string(), t);
                     }
                 });
@@ -150,24 +169,18 @@ impl State {
         ui.separator();
         match self.current_template.as_str() {
             "sp/INCAR.jinja" => {
-                let mut s = include_str!("../../tests/files/vasp-templates/sp/INCAR.jinja");
-                selectable_text(ui, &mut s, "template");
-                self.input_template = s.to_string();
-            }
-            "opt/INCAR.jinja" => {
-                let mut s = include_str!("../../tests/files/vasp-templates/opt/INCAR.jinja");
-                selectable_text(ui, &mut s, "template");
-                self.input_template = s.to_string();
-            }
-            "freq/INCAR.jinja" => {
-                let mut s = include_str!("../../tests/files/vasp-templates/freq/INCAR.jinja");
+                let mut s = templates["sp/INCAR.jinja"].clone();
                 selectable_text(ui, &mut s, "template");
                 self.input_template = s.to_string();
             }
             "custom" => {
                 editable_text(ui, &mut self.input_template, "template");
             }
-            _ => todo!(),
+            t => {
+                let mut s = templates[t].clone();
+                selectable_text(ui, &mut s, "template");
+                self.input_template = s.to_string();
+            }
         }
 
         selectable_text(ui, &mut self.rendered_input.as_str(), "rendered");
