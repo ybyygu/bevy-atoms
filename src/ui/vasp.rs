@@ -177,23 +177,21 @@ impl State {
                 "Template Syntax Reference",
                 "https://docs.rs/minijinja/latest/minijinja/syntax/index.html",
             );
-
-            // action button for render and copy to clipboard
-            let tooltip = "Click to copy generated input to clipboard";
-            if ui.button("📋 Render & Copy").on_hover_text(tooltip).clicked() {
-                self.rendered_input = render_template(&self.input_template, &self.settings).unwrap_or_default();
-                match render_template(&self.input_template, &self.settings) {
-                    Ok(s) => {
-                        self.rendered_input = s;
-                    }
-                    Err(e) => {
-                        self.rendered_input = format!("minijinja template render issue:\n{e:?}");
-                    }
-                }
-                ui.output_mut(|o| o.copied_text = self.rendered_input.clone());
-            }
         });
-
+        // action button for render and copy to clipboard
+        let tooltip = "Click to copy generated input to clipboard";
+        if ui.button("📋 Render & Copy").on_hover_text(tooltip).clicked() {
+            self.rendered_input = render_template(&self.input_template, &self.settings).unwrap_or_default();
+            match render_template(&self.input_template, &self.settings) {
+                Ok(s) => {
+                    self.rendered_input = s;
+                }
+                Err(e) => {
+                    self.rendered_input = format!("minijinja template render issue:\n{e:?}");
+                }
+            }
+            ui.output_mut(|o| o.copied_text = self.rendered_input.clone());
+        }
         ui.separator();
         match self.current_template.as_str() {
             "sp/INCAR.jinja" => {
