@@ -54,7 +54,7 @@ struct Settings {
     ediffg: f64,
 
     // symmetry
-    isym: isize,
+    isym: Option<isize>,
 
     // output verbosity
     nwrite: usize,
@@ -87,7 +87,7 @@ impl Default for Settings {
             ediffg: -0.01,
 
             // symmetry
-            isym: 0,
+            isym: None,
 
             // output verbosity
             nwrite: 2,
@@ -299,7 +299,13 @@ impl State {
                     ui.add(egui::DragValue::new(&mut self.settings.ediffg).speed(0.01));
                     ui.hyperlink_to("ISYM", "https://www.vasp.at/wiki/index.php/ISYM")
                         .on_hover_text("determines the way VASP treats symmetry");
-                    ui.add(egui::DragValue::new(&mut self.settings.isym).clamp_range(-1..=3).speed(1));
+                    ui.selectable_value(&mut self.settings.isym, None, "Use Symmetry")
+                        .on_hover_text(
+                            "Switches on the use of symmetry. If selected, ISYM is not set and it will be automatically determined by VASP",
+                        );
+                    ui.selectable_value(&mut self.settings.isym, Some(0), "No Symmetry")
+                        .on_hover_text("Switches off the use of symmetry. If selected, ISYM=0");
+
                     ui.end_row();
                     ui.hyperlink_to("ISIF", "https://www.vasp.at/wiki/index.php/ISIF")
                         .on_hover_text("determines whether the stress tensor is calculated");

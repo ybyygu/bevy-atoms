@@ -31,4 +31,6 @@ Ionic Relaxation
  IBRION = 2                      !Algorithm: 0-MD, 1-Quasi-New, 2-CG
  ISIF   = {{ISIF or 2}}          !Stress/relaxation: 2-Ions, 3-Shape/Ions/V, 4-Shape/Ions
  EDIFFG = {{EDIFFG or -0.01}}    !Ionic convergence, eV/AA
- # ISYM = 2                      !Symmetry: 0=none, 2=GGA, 3=hybrids
+{%- if ISYM is not none %}
+ ISYM   = {{ISYM}}               !Symmetry: 0=none, 2=GGA, 3=hybrids
+{%- endif -%}
