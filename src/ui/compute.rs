@@ -23,6 +23,7 @@ use std::collections::HashMap;
 pub struct State {
     code: Code,
     vasp_state: super::vasp::State,
+    orca_state: super::orca::State,
 }
 
 impl Default for State {
@@ -30,6 +31,7 @@ impl Default for State {
         Self {
             code: Code::default(),
             vasp_state: super::vasp::State::default(),
+            orca_state: super::orca::State::default(),
         }
     }
 }
@@ -87,7 +89,7 @@ impl State {
                     });
             }
             Code::Orca => {
-                // self.orca_state.show(ui);
+                self.orca_state.show(ui);
             }
             _ => {
                 ui.label("Under Construction!");
