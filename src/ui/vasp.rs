@@ -5,13 +5,37 @@ use gut::prelude::*;
 // 9c9c603b ends here
 
 // [[file:../../bevy.note::7ae276e4][7ae276e4]]
+#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+enum ISpin {
+    #[default]
+    #[serde(rename = "1")]
+    NonSpinPolarized,
+    #[serde(rename = "2")]
+    SpinPolarized,
+}
+
+#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+/// ISIF determines whether the stress tensor is calculated
+enum ISif {
+    #[default]
+    #[serde(rename = "2")]
+    /// Relax ions with constant cell
+    RelaxIons,
+    /// Relax cell shape and volume
+    #[serde(rename = "3")]
+    RelaxCell,
+    /// Relax cell shape but fix cell volume
+    #[serde(rename = "4")]
+    RelaxCellFixVolume,
+}
+
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "UPPERCASE"))]
 struct Settings {
     // general
     encut: usize,
-    // non-spin polarised DFT
-    ispin: usize,
+    // spin polarised DFT?
+    ispin: ISpin,
 
     // electronic relaxation
     ismear: usize,
@@ -26,7 +50,7 @@ struct Settings {
     // useful ionic relaxation
     nsw: usize,
     ibrion: usize,
-    isif: usize,
+    isif: ISif,
     ediffg: f64,
 
     // symmetry
@@ -43,8 +67,8 @@ impl Default for Settings {
         Self {
             // general
             encut: 400,
-            // non-spin polarised DFT
-            ispin: 1,
+            // non-spin-polarised DFT
+            ispin: ISpin::default(),
 
             // electronic relaxation
             ismear: 0,
@@ -59,7 +83,7 @@ impl Default for Settings {
             // useful ionic relaxation
             nsw: 100,
             ibrion: 2,
-            isif: 2,
+            isif: ISif::default(),
             ediffg: -0.01,
 
             // symmetry
@@ -222,11 +246,12 @@ impl State {
         egui::Grid::new("vasp_grid_core").num_columns(2).show(ui, |ui| {
             ui.hyperlink_to("ENCUT", "https://www.vasp.at/wiki/index.php/ENCUT")
                 .on_hover_text("specifies the cutoff energy for the plane-wave-basis set in eV");
-            ui.add(egui::DragValue::new(&mut self.settings.encut).speed(10));
+            ui.add(egui::DragValue::new(&mut self.settings.encut).speed(10).suffix(" eV"));
+            ui.end_row();
             ui.hyperlink_to("ISPIN", "https://www.vasp.at/wiki/index.php/ISPIN")
                 .on_hover_text("ISPIN specifies spin polarization");
-            ui.add(egui::DragValue::new(&mut self.settings.ispin).clamp_range(1..=2).speed(1));
-            ui.end_row();
+            ui.selectable_value(&mut self.settings.ispin, ISpin::NonSpinPolarized, "non-spin-polarized");
+            ui.selectable_value(&mut self.settings.ispin, ISpin::SpinPolarized, "spin-polarized");
         });
 
         ui.collapsing("Electronic relaxation", |ui| {
@@ -275,6 +300,15 @@ impl State {
                     ui.hyperlink_to("ISYM", "https://www.vasp.at/wiki/index.php/ISYM")
                         .on_hover_text("determines the way VASP treats symmetry");
                     ui.add(egui::DragValue::new(&mut self.settings.isym).clamp_range(-1..=3).speed(1));
+                    ui.end_row();
+                    ui.hyperlink_to("ISIF", "https://www.vasp.at/wiki/index.php/ISIF")
+                        .on_hover_text("determines whether the stress tensor is calculated");
+                    ui.selectable_value(&mut self.settings.isif, ISif::RelaxIons, "Relax ions")
+                        .on_hover_text("Relax ion positions with cell shape and volume fixed, corresponding to ISIF=2");
+                    ui.selectable_value(&mut self.settings.isif, ISif::RelaxCell, "Relax cell")
+                        .on_hover_text("Relax ion positions, cell shape and cell volume, corresponding to ISIF=3");
+                    ui.selectable_value(&mut self.settings.isif, ISif::RelaxCellFixVolume, "Fix cell volume")
+                        .on_hover_text("Relax ion positions and cell shape with fixed cell volume, corresponding to ISIF=4");
                 });
         });
 
