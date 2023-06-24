@@ -130,6 +130,8 @@ pub struct State {
     current_template: String,
     rendered_input: String,
     input_template: String,
+    /// User settings in json format
+    json_input: String,
 }
 
 impl Default for State {
@@ -139,6 +141,7 @@ impl Default for State {
             current_template: "custom".to_owned(),
             input_template: String::new(),
             rendered_input: String::new(),
+            json_input: String::new(),
         }
     }
 }
@@ -234,7 +237,7 @@ impl State {
                     // println!("{}", serde_json::to_string_pretty(&json_object).unwrap());
                 }
             }
-            match render_template(&self.input_template, json_value) {
+            match render_template(&self.input_template, &json_value) {
                 Ok(s) => {
                     self.rendered_input = s;
                 }
@@ -243,25 +246,33 @@ impl State {
                 }
             }
             ui.output_mut(|o| o.copied_text = self.rendered_input.clone());
+            // show json input for debug
+            self.json_input = serde_json::to_string_pretty(&json_value.unwrap()).unwrap();
         }
         ui.separator();
+        selectable_text(
+            ui,
+            &mut self.json_input.as_str(),
+            "JSON input",
+            "The json data used for rendering the template",
+        );
         match self.current_template.as_str() {
-            "sp/INCAR.jinja" => {
-                let mut s = templates["sp/INCAR.jinja"].clone();
-                selectable_text(ui, &mut s, "template");
-                self.input_template = s.to_string();
-            }
             "custom" => {
                 editable_text(ui, &mut self.input_template, "template");
             }
             t => {
                 let mut s = templates[t].clone();
-                selectable_text(ui, &mut s, "template");
+                selectable_text(
+                    ui,
+                    &mut s,
+                    "template",
+                    "Selected input template in minijinja format for rendering input file",
+                );
                 self.input_template = s.to_string();
             }
         }
 
-        selectable_text(ui, &mut self.rendered_input.as_str(), "rendered");
+        selectable_text(ui, &mut self.rendered_input.as_str(), "rendered", "Final input file");
     }
 }
 
@@ -275,11 +286,13 @@ fn editable_text(ui: &mut Ui, text: &mut String, label: &str) {
                     .font(egui::TextStyle::Monospace.resolve(ui.style())),
             );
         });
-    });
+    })
+    .header_response
+    .on_hover_text("You are free to edit the input template");
 }
 
 // NOTE: read-only
-fn selectable_text(ui: &mut Ui, mut text: &str, label: &str) {
+fn selectable_text(ui: &mut Ui, mut text: &str, label: &str, hint: &str) {
     ui.collapsing(label, |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.add(
@@ -289,7 +302,9 @@ fn selectable_text(ui: &mut Ui, mut text: &str, label: &str) {
                     .font(egui::TextStyle::Monospace.resolve(ui.style())),
             );
         });
-    });
+    })
+    .header_response
+    .on_hover_text(hint);
 }
 // fb4adf8c ends here
 
