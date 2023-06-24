@@ -55,20 +55,22 @@ fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> 
 }
 
 fn templates(tpl_root_dir: &std::path::Path) -> &'static HashMap<String, String> {
-    TEMPLATES.get_or_init(|| {
-        let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
-        let mut templates: HashMap<String, String> = files
-            .map(|f| {
-                let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
-                let tpl_txt = gut::fs::read_file(f).unwrap();
-                (tpl_key, tpl_txt)
-            })
-            .collect();
-        // allow user custom template
-        templates.insert("custom".into(), String::new());
-        info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
-        templates
-    })
+    TEMPLATES.get_or_init(|| load_templates(tpl_root_dir))
+}
+
+fn load_templates(tpl_root_dir: &std::path::Path) -> HashMap<String, String> {
+    let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
+    let mut templates: HashMap<String, String> = files
+        .map(|f| {
+            let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
+            let tpl_txt = gut::fs::read_file(f).unwrap();
+            (tpl_key, tpl_txt)
+        })
+        .collect();
+    // allow user custom template
+    templates.insert("custom".into(), String::new());
+    info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
+    templates
 }
 // 897a5556 ends here
 
@@ -80,14 +82,15 @@ pub(crate) struct State {
     input_template: String,
     /// User settings in json format
     json_input: String,
-    template_root_dir: PathBuf,
+    templates: HashMap<String, String>,
 }
 
 impl State {
     pub fn new(template_root_dir: &Path) -> Self {
+        let templates = load_templates(template_root_dir);
         Self {
-            template_root_dir: template_root_dir.to_owned(),
             current_template: "custom".to_owned(),
+            templates,
             ..Default::default()
         }
     }
@@ -97,7 +100,7 @@ impl State {
 // [[file:../../bevy.note::27a033ae][27a033ae]]
 impl State {
     pub fn show_template_selection<S: Serialize>(&mut self, settings: S, ui: &mut Ui, mol: Option<Molecule>) {
-        let templates = templates(&self.template_root_dir);
+        let templates = &self.templates;
 
         ui.horizontal(|ui| {
             ui.label("Render template:")
