@@ -6,6 +6,7 @@ use bevy::prelude::*;
 mod compute;
 mod orca;
 mod vasp;
+mod gaussian;
 // 8d1285a1 ends here
 
 // [[file:../bevy.note::02f2343f][02f2343f]]
@@ -424,11 +425,16 @@ mod input {
     pub fn input_generator_window_system(
         mut state: ResMut<super::compute::State>,
         mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>,
+        mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
     ) {
         let Ok(mut ctx) = egui_ctx.get_single_mut() else { return; };
         let ctx = ctx.get_mut();
-        ctx.set_visuals(egui::Visuals::light()); // Switch to light mode
-        state.show(ctx);
+        // Switch to light mode
+        ctx.set_visuals(egui::Visuals::light());
+        // `Molecule` is required for input file generator
+        // FIXME: select which molecule to render?
+        let mol = traj.mols.iter().last().cloned();
+        state.show(ctx, mol);
     }
 }
 // 50cf0041 ends here

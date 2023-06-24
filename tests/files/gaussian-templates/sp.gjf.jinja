@@ -1,0 +1,13 @@
+%nproc=36
+%mem=20GB
+#p force {{method or "B3LYP"}}/{{basis_set or "STO-3G"}} symmetry={{symmetry}}
+{% if dispersion -%}
+EmpiricalDispersion={{dispersion}}
+{%- endif %}
+
+Single point calculation
+
+{{charge}} {{multiplicity}}
+{% for a in molecule.atoms -%}
+{{a.symbol | format("<6") }} {{ a.x | format("-18.8")}} {{ a.y | format("-18.8")}} {{ a.z | format("-18.8")}}
+{% endfor %}

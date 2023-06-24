@@ -19,11 +19,12 @@ enum Code {
 // [[file:../../bevy.note::ba17983a][ba17983a]]
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Deserialize, Serialize, Resource)]
+#[derive(Debug, Deserialize, Serialize, Resource)]
 pub struct State {
     code: Code,
     vasp_state: super::vasp::State,
     orca_state: super::orca::State,
+    gaussian_state: super::gaussian::State,
 }
 
 impl Default for State {
@@ -32,6 +33,7 @@ impl Default for State {
             code: Code::default(),
             vasp_state: super::vasp::State::default(),
             orca_state: super::orca::State::default(),
+            gaussian_state: super::gaussian::State::default(),
         }
     }
 }
@@ -65,7 +67,7 @@ impl State {
 
 // [[file:../../bevy.note::a6fccc52][a6fccc52]]
 impl State {
-    fn show_central_panel(&mut self, ui: &mut Ui) {
+    fn show_central_panel(&mut self, ui: &mut Ui, mol: Option<gchemol::Molecule>) {
         ui.heading(format!("{:?} input generator", self.code));
         ui.separator();
 
@@ -74,19 +76,7 @@ impl State {
                 self.vasp_state.show(ui);
             }
             Code::Gaussian => {
-                // 格线对齐
-                egui::Grid::new("my_grid")
-                    .num_columns(2)
-                    .spacing([40.0, 4.0])
-                    .striped(true)
-                    .show(ui, |ui| {
-                        ui.label("Title:");
-                        ui.end_row();
-                        ui.label("Charge:");
-                        ui.end_row();
-                        ui.label("Multiplicity:");
-                        ui.end_row();
-                    });
+                self.gaussian_state.show(ui, mol);
             }
             Code::Orca => {
                 self.orca_state.show(ui);
@@ -102,14 +92,14 @@ impl State {
 // [[file:../../bevy.note::39717a88][39717a88]]
 impl State {
     /// Show UI for all orca settings
-    pub fn show(&mut self, ctx: &egui::Context) {
+    pub fn show(&mut self, ctx: &egui::Context, mol: Option<gchemol::Molecule>) {
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             self.show_side_panel(ui);
         });
 
         // The central panel the region left after adding TopPanel's and SidePanel's
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.show_central_panel(ui);
+            self.show_central_panel(ui, mol);
         });
     }
 }
