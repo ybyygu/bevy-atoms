@@ -99,147 +99,21 @@ impl Default for Settings {
 // 7ae276e4 ends here
 
 // [[file:../../bevy.note::d7d12e5e][d7d12e5e]]
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct State {
     settings: Settings,
-    current_template: String,
-    rendered_input: String,
-    input_template: String,
+    template_state: super::template::State,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            current_template: "custom".to_owned(),
-            input_template: String::new(),
-            rendered_input: String::new(),
+            template_state: super::template::State::new("tests/files/vasp-templates".as_ref()),
         }
     }
 }
 // d7d12e5e ends here
-
-// [[file:../../bevy.note::6785c6e2][6785c6e2]]
-use std::collections::HashMap;
-use std::sync::OnceLock;
-
-// the templates loaded from files
-static TEMPLATES: OnceLock<HashMap<String, String>> = OnceLock::new();
-
-fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> {
-    use minijinja::{context, Environment};
-
-    let mut env = Environment::new();
-    env.add_template("hello", template)?;
-    let tmpl = env.get_template("hello")?;
-
-    let s = tmpl.render(settings)?;
-    Ok(s)
-}
-
-impl State {
-    fn templates() -> &'static HashMap<String, String> {
-        let tpl_root_dir: &std::path::Path = "tests/files/vasp-templates".as_ref();
-        TEMPLATES.get_or_init(|| {
-            dbg!();
-            let mut s = include_str!("../../tests/files/vasp-templates/sp/INCAR.jinja");
-            let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
-            let mut templates: HashMap<String, String> = files
-                .map(|f| {
-                    let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
-                    let tpl_txt = gut::fs::read_file(f).unwrap();
-                    (tpl_key, tpl_txt)
-                })
-                .collect();
-            // allow user custom template
-            templates.insert("custom".into(), String::new());
-            info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
-            templates
-        })
-    }
-
-    fn show_template_selection(&mut self, ui: &mut Ui) {
-        let templates = Self::templates();
-
-        ui.horizontal(|ui| {
-            ui.label("Render template:")
-                .on_hover_text("Select predefined input templates. Swithc to `custom` for edit.");
-            egui::ComboBox::from_id_source("vasp-template")
-                .width(200.0)
-                .selected_text(&self.current_template)
-                .show_ui(ui, |ui| {
-                    for t in templates.keys() {
-                        ui.selectable_value(&mut self.current_template, t.to_string(), t);
-                    }
-                });
-            // minijinja syntax reference
-            ui.hyperlink_to(
-                "Template Syntax Reference",
-                "https://docs.rs/minijinja/latest/minijinja/syntax/index.html",
-            );
-        });
-        // action button for render and copy to clipboard
-        let tooltip = "Click to copy generated input to clipboard";
-        if ui.button("📋 Render & Copy").on_hover_text(tooltip).clicked() {
-            self.rendered_input = render_template(&self.input_template, &self.settings).unwrap_or_default();
-            match render_template(&self.input_template, &self.settings) {
-                Ok(s) => {
-                    self.rendered_input = s;
-                }
-                Err(e) => {
-                    self.rendered_input = format!("minijinja template render issue:\n{e:?}");
-                }
-            }
-            ui.output_mut(|o| o.copied_text = self.rendered_input.clone());
-        }
-        ui.separator();
-        match self.current_template.as_str() {
-            "sp/INCAR.jinja" => {
-                let mut s = templates["sp/INCAR.jinja"].clone();
-                selectable_text(ui, &mut s, "template");
-                self.input_template = s.to_string();
-            }
-            "custom" => {
-                editable_text(ui, &mut self.input_template, "template");
-            }
-            t => {
-                let mut s = templates[t].clone();
-                selectable_text(ui, &mut s, "template");
-                self.input_template = s.to_string();
-            }
-        }
-
-        selectable_text(ui, &mut self.rendered_input.as_str(), "rendered");
-    }
-}
-
-fn editable_text(ui: &mut Ui, text: &mut String, label: &str) {
-    ui.collapsing(label, |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.add(
-                egui::TextEdit::multiline(text)
-                    .hint_text(label)
-                    .desired_width(f32::INFINITY)
-                    .font(egui::TextStyle::Monospace.resolve(ui.style())),
-            );
-        });
-    });
-}
-
-// NOTE: read-only
-fn selectable_text(ui: &mut Ui, mut text: &str, label: &str) {
-    ui.collapsing(label, |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.add(
-                egui::TextEdit::multiline(&mut text)
-                    .hint_text(label)
-                    .desired_width(f32::INFINITY)
-                    .font(egui::TextStyle::Monospace.resolve(ui.style())),
-            );
-        });
-    });
-}
-// 6785c6e2 ends here
 
 // [[file:../../bevy.note::905e0f65][905e0f65]]
 impl State {
@@ -336,7 +210,8 @@ impl State {
                 });
         });
         ui.separator();
-        self.show_template_selection(ui);
+
+        self.template_state.show_template_selection(&self.settings, ui, None);
     }
 }
 // 905e0f65 ends here

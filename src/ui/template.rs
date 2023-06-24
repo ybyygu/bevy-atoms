@@ -96,7 +96,7 @@ impl State {
 
 // [[file:../../bevy.note::27a033ae][27a033ae]]
 impl State {
-    fn show_template_selection<S: Serialize>(&mut self, ui: &mut Ui, settings: S, mol: Option<Molecule>) {
+    pub fn show_template_selection<S: Serialize>(&mut self, settings: S, ui: &mut Ui, mol: Option<Molecule>) {
         let templates = templates(&self.template_root_dir);
 
         ui.horizontal(|ui| {
