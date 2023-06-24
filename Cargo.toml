@@ -94,6 +94,6 @@ embed-resource = "1.4"
 [workspace]
 
 [patch.crates-io]
-gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol" }
-gchemol-readwrite = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-readwrite"}
+# gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol" }
+# gchemol-readwrite = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-readwrite"}
 # e345323a ends here
