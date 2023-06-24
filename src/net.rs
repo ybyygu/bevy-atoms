@@ -135,10 +135,9 @@ mod systems {
     }
 
     pub fn stop_server_on_exit(mut exit_events: EventReader<bevy::app::AppExit>, mut server: ResMut<NetworkServer>) {
-        for _ in exit_events.iter() {
+        if let Some(_) = exit_events.iter().next() {
             info!("Stopping background server ...");
             server.stop();
-            break;
         }
     }
 }

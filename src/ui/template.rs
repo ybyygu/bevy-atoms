@@ -125,14 +125,12 @@ impl State {
         if ui.button("📋 Render & Copy").on_hover_text(tooltip).clicked() {
             let mut json_value = serde_json::to_value(settings).ok();
             // append molecule object into user settings
-            if json_value.is_some() {
-                if let Some(json_object) = json_value.as_mut().unwrap().as_object_mut() {
-                    if let Some(mol) = mol {
-                        let mut mol_object = gchemol::io::to_json_value(&mol);
-                        json_object.append(mol_object.as_object_mut().unwrap());
-                    }
-                    // println!("{}", serde_json::to_string_pretty(&json_object).unwrap());
+            if let Some(json_object) = json_value.as_mut().and_then(|v| v.as_object_mut()) {
+                if let Some(mol) = mol {
+                    let mut mol_object = gchemol::io::to_json_value(&mol);
+                    json_object.append(mol_object.as_object_mut().unwrap());
                 }
+                // println!("{}", serde_json::to_string_pretty(&json_object).unwrap());
             }
             match render_template(&self.input_template, &json_value) {
                 Ok(s) => {

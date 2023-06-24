@@ -45,7 +45,7 @@ fn load_command(
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
         match cmd {
             RemoteCommand::Load(mols) => {
-                if mols.len() > 0 {
+                if mols.is_empty() {
                     let mol = &mols[0];
                     info!("handle received mol: {}", mol.title());
                     // remove existing molecule
