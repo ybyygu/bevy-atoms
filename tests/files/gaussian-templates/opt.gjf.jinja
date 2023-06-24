@@ -1,9 +1,6 @@
 %nproc=36
 %mem=15GB
-#p opt {{method or "B3LYP"}}/{{basis_set or "STO-3G"}} symmetry={{symmetry}}
-{% if dispersion -%}
-EmpiricalDispersion={{dispersion}}
-{%- endif %}
+#p opt {{method or "B3LYP"}}/{{basis_set or "STO-3G"}} symmetry={{symmetry}} {% if dispersion %} EmpiricalDispersion={{dispersion}} {% endif %}
 
 Geometry optimization
 

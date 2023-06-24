@@ -120,7 +120,6 @@ struct Settings {
     scf_type: Option<ScfType>,
     scf_convergence: Option<ScfOptions>,
     dispersion: Option<Dispersion>,
-    molecule: Option<Molecule>,
 }
 // 9c74c607 ends here
 
@@ -200,7 +199,7 @@ impl State {
         })
     }
 
-    fn show_template_selection(&mut self, ui: &mut Ui) {
+    fn show_template_selection(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
         let templates = Self::templates();
 
         ui.horizontal(|ui| {
@@ -228,8 +227,10 @@ impl State {
             // append molecule object into user settings
             if json_value.is_some() {
                 if let Some(json_object) = json_value.as_mut().unwrap().as_object_mut() {
-                    let mut mol_object = gchemol::io::to_json_value(&self.settings.molecule.clone().unwrap());
-                    json_object.append(mol_object.as_object_mut().unwrap());
+                    if let Some(mol) = mol {
+                        let mut mol_object = gchemol::io::to_json_value(&mol);
+                        json_object.append(mol_object.as_object_mut().unwrap());
+                    }
                     // println!("{}", serde_json::to_string_pretty(&json_object).unwrap());
                 }
             }
@@ -296,9 +297,6 @@ fn selectable_text(ui: &mut Ui, mut text: &str, label: &str) {
 impl State {
     /// Show UI for Gaussian input generator
     pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
-        // Gaussian input needs molecule data
-        self.settings.molecule = mol;
-
         egui::Grid::new("gaussian_grid_core").num_columns(2).show(ui, |ui| {
             // method
             ui.hyperlink_to("Method", "https://gaussian.com/dft");
@@ -311,7 +309,11 @@ impl State {
             ui.label("Charge");
             ui.add(egui::DragValue::new(&mut self.settings.charge).speed(1.0));
             ui.label("Multiplicity");
-            ui.add(egui::DragValue::new(&mut self.settings.multiplicity.0).speed(1.0));
+            ui.add(
+                egui::DragValue::new(&mut self.settings.multiplicity.0)
+                    .clamp_range(1..=100)
+                    .speed(1),
+            );
         });
 
         ui.collapsing("SCF", |ui| {
@@ -360,7 +362,8 @@ impl State {
         });
 
         ui.separator();
-        self.show_template_selection(ui);
+        // Gaussian input needs molecule data
+        self.show_template_selection(ui, mol);
     }
 }
 // adbd1801 ends here
