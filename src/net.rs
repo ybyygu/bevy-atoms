@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use serde::*;
 
-use gchemol_core::Molecule;
+use gchemol::Molecule;
 use gut::prelude::Result;
 // 495e3d25 ends here
 
@@ -75,7 +75,7 @@ mod routes {
     use super::app_error::AppError;
     use super::RemoteCommand;
     use super::RemoteCommandSender;
-    use gchemol_core::Molecule;
+    use gchemol::Molecule;
     use gut::prelude::Result;
 
     use axum::extract::State;

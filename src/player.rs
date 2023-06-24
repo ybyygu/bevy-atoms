@@ -75,7 +75,7 @@ impl CurrentFrame {
 // 52696eea ends here
 
 // [[file:../bevy.note::5cf783bd][5cf783bd]]
-fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
+fn get_atom_display_size(a: &gchemol::Atom) -> f64 {
     // ((a.get_cov_radius().unwrap_or(0.5) + 0.5) / 2.0) as f32
     let r = a.get_cov_radius().unwrap_or(1.0);
     (r * 0.3 + 0.7) * 0.45
@@ -83,7 +83,7 @@ fn get_atom_display_size(a: &gchemol_core::Atom) -> f64 {
 // 5cf783bd ends here
 
 // [[file:../bevy.note::4f2c9201][4f2c9201]]
-fn get_atom_color(atom: &gchemol_core::Atom) -> Color {
+fn get_atom_color(atom: &gchemol::Atom) -> Color {
     // initialize atom colors
     let atom_colors = ATOM_COLORS.get_or_init(|| {
         vec![
@@ -224,7 +224,7 @@ pub struct Atom {
 }
 
 impl Atom {
-    pub fn new(a: &gchemol_core::Atom) -> Self {
+    pub fn new(a: &gchemol::Atom) -> Self {
         let radius = get_atom_display_size(a) as f32;
         let color = get_atom_color(a);
         let position = a.position().map(|v| v as f32).into();
@@ -341,7 +341,7 @@ fn as_vec3(p: impl Into<[f64; 3]>) -> Vec3 {
 }
 
 fn create_lattice(
-    lat: &gchemol_core::Lattice,
+    lat: &gchemol::Lattice,
     visible: bool,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
@@ -386,7 +386,7 @@ fn create_lattice(
 pub struct FrameIndex(pub usize);
 
 pub fn spawn_molecule(
-    mol: &gchemol_core::Molecule,
+    mol: &gchemol::Molecule,
     visible: bool,
     frame_index: usize,
     mut commands: &mut Commands,

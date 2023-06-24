@@ -58,7 +58,6 @@ bevy_panorbit_camera = { version = "0.4.1", features = ["bevy_egui"] }
 # egui = { version = "0.21.0", default-features = false, features = ["bytemuck"] }
 
 gut = { version = "0.4.4", package = "gchemol-gut" }
-gchemol-core = { version = "0.1.4", features = ["adhoc"] }
 tokio = { version = "1.11.0", features = [
   "net",
   "io-util",

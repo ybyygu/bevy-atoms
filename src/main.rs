@@ -17,7 +17,7 @@ fn main() {
     // When building for WASM, print panics to the browser console
     console_error_panic_hook::set_once();
 
-    let mut mol = gchemol_core::Molecule::from_database("CH4");
+    let mut mol = gchemol::Molecule::from_database("CH4");
     mol.rebond();
     let mol_plugin = gchemol_view::molecule::MoleculePlugin::from_mols(vec![mol]);
     App::new()

@@ -86,7 +86,7 @@ fn setup_lights(commands: &mut Commands) {
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
 #[derive(Resource, Clone, Debug, Default)]
 pub struct MoleculeTrajectory {
-    pub mols: Vec<gchemol_core::Molecule>,
+    pub mols: Vec<gchemol::Molecule>,
 }
 
 /// Visilization state
@@ -192,7 +192,7 @@ pub struct MoleculePlugin {
 
 impl MoleculePlugin {
     /// Create animation from a vec of molecules
-    pub fn from_mols(mols: Vec<gchemol_core::Molecule>) -> Self {
+    pub fn from_mols(mols: Vec<gchemol::Molecule>) -> Self {
         Self {
             traj: MoleculeTrajectory { mols },
         }

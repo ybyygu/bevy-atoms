@@ -4,7 +4,7 @@
 
 use super::{RemoteCommand, StreamEvent};
 use crate::net::ServerPlugin;
-use gchemol_core::Molecule;
+use gchemol::Molecule;
 
 use bevy::prelude::*;
 // 6c039888 ends here
