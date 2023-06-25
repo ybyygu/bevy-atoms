@@ -141,29 +141,6 @@ impl Default for State {
 }
 // a3be178b ends here
 
-// [[file:../../bevy.note::3aac771e][3aac771e]]
-macro_rules! enum_value {
-    ($v:expr) => {{
-        serde_json::to_string($v).unwrap().trim_matches('"').to_string()
-    }};
-}
-
-macro_rules! show_combo_box_enum {
-    ($id:literal, $ui:ident, $var:expr, $type:ty, $width:literal) => {
-        let s = enum_value!(&$var);
-        egui::ComboBox::from_id_source($id)
-            .width($width)
-            .selected_text(s)
-            .show_ui($ui, |ui| {
-                for t in enum_iterator::all::<$type>() {
-                    let s = enum_value!(&t);
-                    ui.selectable_value(&mut $var, t.into(), s);
-                }
-            });
-    };
-}
-// 3aac771e ends here
-
 // [[file:../../bevy.note::adbd1801][adbd1801]]
 impl State {
     /// Show UI for Gaussian input generator

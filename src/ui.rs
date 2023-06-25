@@ -2,6 +2,29 @@
 use bevy::prelude::*;
 // imports:1 ends here
 
+// [[file:../bevy.note::45bd6a9d][45bd6a9d]]
+macro_rules! enum_value {
+    ($v:expr) => {{
+        serde_json::to_string($v).unwrap().trim_matches('"').to_string()
+    }};
+}
+
+macro_rules! show_combo_box_enum {
+    ($id:literal, $ui:ident, $var:expr, $type:ty, $width:literal) => {
+        let s = enum_value!(&$var);
+        egui::ComboBox::from_id_source($id)
+            .width($width)
+            .selected_text(s)
+            .show_ui($ui, |ui| {
+                for t in enum_iterator::all::<$type>() {
+                    let s = enum_value!(&t);
+                    ui.selectable_value(&mut $var, t.into(), s);
+                }
+            });
+    };
+}
+// 45bd6a9d ends here
+
 // [[file:../bevy.note::8d1285a1][8d1285a1]]
 mod compute;
 mod gaussian;
@@ -84,7 +107,7 @@ fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, v
     let mut text = TextBundle::from_section(
         text,
         TextStyle {
-            font: font.clone(),
+            font,
             font_size: 14.0,
             ..default()
         },
