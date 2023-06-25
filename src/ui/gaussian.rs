@@ -135,7 +135,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            template_state: super::template::State::new("tests/files/gaussian-templates".as_ref()),
+            template_state: super::template::State::new("gaussian-templates".as_ref()),
         }
     }
 }

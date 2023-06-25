@@ -45,8 +45,10 @@ fn selectable_text(ui: &mut Ui, mut text: &str, label: &str, hint: &str) {
 // b0bc4f80 ends here
 
 // [[file:../../bevy.note::897a5556][897a5556]]
+use include_dir::{include_dir, Dir, DirEntry};
+
 // the templates loaded from files
-static TEMPLATES: OnceLock<HashMap<String, String>> = OnceLock::new();
+static TEMPLATE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/tests/files");
 
 fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> {
     let template = gchemol::io::Template::from_str(template);
@@ -54,22 +56,26 @@ fn render_template<S: Serialize>(template: &str, settings: S) -> Result<String> 
     Ok(s)
 }
 
-fn templates(tpl_root_dir: &std::path::Path) -> &'static HashMap<String, String> {
-    TEMPLATES.get_or_init(|| load_templates(tpl_root_dir))
-}
-
+#[track_caller]
 fn load_templates(tpl_root_dir: &std::path::Path) -> HashMap<String, String> {
-    let files = gchemol::io::find_files(".jinja", tpl_root_dir, true);
-    let mut templates: HashMap<String, String> = files
-        .map(|f| {
-            let tpl_key = f.strip_prefix(tpl_root_dir).unwrap().to_str().unwrap().to_owned();
-            let tpl_txt = gut::fs::read_file(f).unwrap();
-            (tpl_key, tpl_txt)
-        })
-        .collect();
+    let mut templates = HashMap::new();
     // allow user custom template
     templates.insert("custom".into(), String::new());
-    info!("Loaded {} templates from {:?}", templates.len(), tpl_root_dir);
+
+    // load minijinja template files
+    if let Some(dir) = TEMPLATE_DIR.get_dir(tpl_root_dir) {
+        for dir_entry in dir.find("**/*.jinja").unwrap() {
+            if let DirEntry::File(f) = dir_entry {
+                if let Some(s) = f.path().strip_prefix(tpl_root_dir).ok().and_then(|f| f.to_str()) {
+                    let tpl_key = s.to_owned();
+                    let tpl_txt = f.contents_utf8().unwrap().to_owned();
+                    templates.insert(tpl_key, tpl_txt);
+                }
+            }
+        }
+    }
+    info!("Loaded {} templates from {:?}", templates.len() - 1, tpl_root_dir);
+
     templates
 }
 // 897a5556 ends here

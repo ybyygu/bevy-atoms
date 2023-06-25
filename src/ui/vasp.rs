@@ -109,7 +109,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            template_state: super::template::State::new("tests/files/vasp-templates".as_ref()),
+            template_state: super::template::State::new("vasp-templates".as_ref()),
         }
     }
 }
