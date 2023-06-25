@@ -91,7 +91,7 @@ impl State {
                 self.cp2k_state.show(ui, mol);
             }
             Code::Orca => {
-                self.orca_state.show(ui);
+                self.orca_state.show(ui, mol);
             }
             Code::Gaussian => {
                 self.gaussian_state.show(ui, mol);

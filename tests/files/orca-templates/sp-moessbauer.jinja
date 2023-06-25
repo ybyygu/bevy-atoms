@@ -19,8 +19,17 @@ end
 newGTO Fe "CP(PPP)" end
 end
 
-* xyzfile 0 1 orca-input.xyz
-
 %eprnmr
   nuclei = all Fe {fgrad, rho}
 end
+
+# coordinates
+{%- if write_molecule_geometry %}
+* xyz {{charge}} {{multiplicity}}
+{% for a in molecule.atoms -%}
+{{a.symbol | format("<6") }} {{ a.x | format("-18.8")}} {{ a.y | format("-18.8")}} {{ a.z | format("-18.8")}}
+{% endfor -%}
+*
+{% else %}
+* xyzfile {{charge}} {{multiplicity}} orca-input.xyz
+{% endif %}

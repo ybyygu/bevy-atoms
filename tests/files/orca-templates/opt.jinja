@@ -35,5 +35,13 @@ UseGDIIS false
 #end
 end
 
-# charge and multiplicity
+# coordinates
+{%- if write_molecule_geometry %}
+* xyz {{charge}} {{multiplicity}}
+{% for a in molecule.atoms -%}
+{{a.symbol | format("<6") }} {{ a.x | format("-18.8")}} {{ a.y | format("-18.8")}} {{ a.z | format("-18.8")}}
+{% endfor -%}
+*
+{% else %}
 * xyzfile {{charge}} {{multiplicity}} orca-input.xyz
+{% endif %}

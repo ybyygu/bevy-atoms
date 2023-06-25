@@ -3,6 +3,7 @@ use bevy_egui::egui;
 use egui::Ui;
 use enum_iterator::Sequence;
 
+use gchemol::Molecule;
 use gut::prelude::*;
 // 46a7bd1f ends here
 
@@ -120,6 +121,8 @@ struct Settings {
     scf_convergence: Option<SCFConvergence>,
     dispersion: Option<Dispersion>,
     ri: Option<RIApproximation>,
+    // write molecule geometry in generated input
+    write_molecule_geometry: bool,
 }
 // 7ae276e4 ends here
 
@@ -144,7 +147,7 @@ impl Default for State {
 // [[file:../../bevy.note::bc270427][bc270427]]
 impl State {
     /// Show egui UI
-    pub fn show(&mut self, ui: &mut Ui) {
+    pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
         egui::Grid::new("orca_grid_core").num_columns(2).show(ui, |ui| {
             // method
             ui.hyperlink_to("Method", "https://sites.google.com/site/orcainputlibrary/dft-calculations");
@@ -207,11 +210,15 @@ impl State {
                     ui.end_row();
                     ui.label("RI Approximation");
                     show_combo_box_enum!("orca-ri", ui, self.settings.ri, RIApproximation, 200.0);
+                    ui.end_row();
+                    ui
+                        .checkbox(&mut self.settings.write_molecule_geometry, "Write geometry")
+                        .on_hover_text("If checked, write molecule geometry using `xyz` keyword. If not, read from a default xyzfile `orca-input.xyz`");
                 })
         });
 
         ui.separator();
-        self.template_state.show_template_selection(&self.settings, ui, None);
+        self.template_state.show_template_selection(&self.settings, ui, mol);
     }
 }
 // bc270427 ends here
