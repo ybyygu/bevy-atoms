@@ -14,6 +14,10 @@ enum Code {
     Gaussian,
     Orca,
     Cp2k,
+    Siesta,
+    Lammps,
+    Gulp,
+    Rest,
 }
 // 52d286c4 ends here
 
@@ -53,6 +57,10 @@ impl State {
             ui.selectable_value(&mut self.code, Code::Cp2k, "CP2K");
             ui.selectable_value(&mut self.code, Code::Orca, "ORCA");
             ui.selectable_value(&mut self.code, Code::Gaussian, "Gaussian");
+            ui.selectable_value(&mut self.code, Code::Rest, "REST");
+            ui.selectable_value(&mut self.code, Code::Gulp, "GULP");
+            ui.selectable_value(&mut self.code, Code::Siesta, "SIESTA");
+            ui.selectable_value(&mut self.code, Code::Lammps, "LAMMPS");
         });
 
         ui.separator();
