@@ -18,8 +18,8 @@
 &FORCE_EVAL
   METHOD Quickstep
   &DFT
-    #CHARGE  0
-    #MULTIPLICITY  1
+    CHARGE  {{charge}}
+    MULTIPLICITY  {{multiplicity}}
     BASIS_SET_FILE_NAME BASIS_SET
     POTENTIAL_FILE_NAME POTENTIAL
     &SCF
@@ -27,7 +27,7 @@
       &END OT
     &END SCF
     &XC
-      &XC_FUNCTIONAL PBE
+      &XC_FUNCTIONAL {{method}}
       &END XC_FUNCTIONAL
     &END XC
   &END DFT
@@ -42,13 +42,13 @@
   &COORD
     Unit Angstrom
     {%- for a in molecule.atoms %}
-    {{a.symbol}} {{ a.x | format}} {{ a.y | format}} {{ a.z | format}}
+    {{a.symbol}} {{ a.x | format("-18.8")}} {{ a.y | format("-18.8")}} {{ a.z | format("-18.8")}}
     {%- endfor %}
   &END COORD
   {%- for e in molecule.element_types %}
-  &KIND {{e.0}}
-    BASIS_SET DZVP-GTH-PBE
-    POTENTIAL GTH-PBE
+  &KIND {{e[0]}}
+    BASIS_SET {{basis_set}}-GTH-{{method}}
+    POTENTIAL GTH-{{method}}
   &END KIND
   {%- endfor %}
 &END SUBSYS

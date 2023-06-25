@@ -36,14 +36,10 @@ enum Symmetry {
 #[derive(Debug, Default, PartialEq, Deserialize, Serialize, Sequence)]
 enum BasisSet {
     #[default]
-    #[serde(rename = "TZVP-GTH")]
-    Tzvp,
-    #[serde(rename = "DZVP-GTH")]
-    Dzpd,
-    #[serde(rename = "SZV-GTH")]
+    DZVP,
+    TZVP,
+    DZPD,
     SZV,
-    #[serde(rename = "DZV-GTH")]
-    DZV,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -117,7 +113,7 @@ struct Settings {
 }
 // b03b7d99 ends here
 
-// [[file:../../bevy.note::*ui state][ui state:1]]
+// [[file:../../bevy.note::9319fcf3][9319fcf3]]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct State {
     settings: Settings,
@@ -129,11 +125,11 @@ impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::default(),
-            template_state: super::template::State::new("gaussian-templates".as_ref()),
+            template_state: super::template::State::new("cp2k-templates".as_ref()),
         }
     }
 }
-// ui state:1 ends here
+// 9319fcf3 ends here
 
 // [[file:../../bevy.note::12fe2b66][12fe2b66]]
 impl State {
@@ -141,12 +137,12 @@ impl State {
     pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
         egui::Grid::new("cp2k_grid_core").num_columns(2).show(ui, |ui| {
             // method
-            ui.hyperlink_to("Method", "https://gaussian.com/dft");
-            show_combo_box_enum!("gaussian-method", ui, self.settings.method, Method, 200.0);
+            ui.hyperlink_to("Method", "https://manual.cp2k.org/trunk/new/CP2K_INPUT/FORCE_EVAL/DFT.html");
+            show_combo_box_enum!("cp2k-method", ui, self.settings.method, Method, 200.0);
             ui.end_row();
             // basis set
-            ui.hyperlink_to("Basis set", "https://gaussian.com/basissets/");
-            show_combo_box_enum!("gaussian-basis", ui, self.settings.basis_set, BasisSet, 200.0);
+            ui.label("Basis set");
+            show_combo_box_enum!("cp2k-basis", ui, self.settings.basis_set, BasisSet, 200.0);
             ui.end_row();
             ui.label("Charge");
             ui.add(egui::DragValue::new(&mut self.settings.charge).speed(1.0));
@@ -167,16 +163,16 @@ impl State {
                     // SCF type
                     ui.hyperlink_to("SCF Type", "https://gaussian.com/scf/")
                         .on_hover_text("This keyword controls the functioning of the SCF procedure");
-                    show_combo_box_enum!("gaussian-scf-type", ui, self.settings.scf_type, ScfType, 200.0);
+                    show_combo_box_enum!("cp2k-scf-type", ui, self.settings.scf_type, ScfType, 200.0);
                     // SCF convergence
                     ui.end_row();
                     ui.hyperlink_to("SCF Options", "https://gaussian.com/scf/?tabid=1")
                         .on_hover_text("This keyword controls the functioning of the SCF procedure");
-                    show_combo_box_enum!("gaussian-scf-options", ui, self.settings.scf_convergence, ScfOptions, 200.0);
+                    show_combo_box_enum!("cp2k-scf-options", ui, self.settings.scf_convergence, ScfOptions, 200.0);
                     // DFT grid
                     ui.end_row();
                     ui.hyperlink_to("DFT Grid", "https://gaussian.com/integral/");
-                    show_combo_box_enum!("gaussian-dft-grid", ui, self.settings.dft_grid, DFTGrid, 200.0);
+                    show_combo_box_enum!("cp2k-dft-grid", ui, self.settings.dft_grid, DFTGrid, 200.0);
                 });
         });
 
@@ -199,7 +195,7 @@ impl State {
                     ui.end_row();
                     ui.hyperlink_to("Dispersion", "https://gaussian.com/dft/?tabid=3")
                         .on_hover_text("The EmpiricalDispersion keyword enables empirical dispersion.");
-                    show_combo_box_enum!("gaussian-dispersion", ui, self.settings.dispersion, Dispersion, 200.0);
+                    show_combo_box_enum!("cp2k-dispersion", ui, self.settings.dispersion, Dispersion, 200.0);
                 })
         });
 
