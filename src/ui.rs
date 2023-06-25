@@ -1,4 +1,8 @@
 // [[file:../bevy.note::*imports][imports:1]]
+#![deny(warnings)]
+#![deny(clippy::all)]
+#![allow(non_camel_case_types)]
+
 use bevy::prelude::*;
 // imports:1 ends here
 
@@ -50,6 +54,7 @@ impl AtomLabel {
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_offset(mut self, offset: Vec3) -> Self {
         self.offset = offset;
         self
@@ -161,8 +166,8 @@ fn handle_atom_label_events(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut events: EventReader<AtomLabelEvent>,
-    mut label_query: Query<Entity, With<AtomLabel>>,
-    mut frame_query: Query<(Entity, &crate::player::FrameIndex, &Visibility), With<crate::player::Atom>>,
+    label_query: Query<Entity, With<AtomLabel>>,
+    frame_query: Query<(Entity, &crate::player::FrameIndex, &Visibility), With<crate::player::Atom>>,
 ) {
     for event in events.iter() {
         match event {
@@ -190,12 +195,7 @@ fn handle_atom_label_events(
 
 // [[file:../bevy.note::3fa34d4c][3fa34d4c]]
 impl UiApp {
-    fn load_trajectory(
-        &mut self,
-        traj: ResMut<crate::molecule::MoleculeTrajectory>,
-        mut state: ResMut<UiState>,
-        mut writer: EventWriter<crate::net::StreamEvent>,
-    ) {
+    fn load_trajectory(&mut self, mut state: ResMut<UiState>, mut writer: EventWriter<crate::net::StreamEvent>) {
         if let Some(path) = rfd::FileDialog::new()
             .add_filter("auto detect", &["*"])
             .add_filter("*.xyz", &["xyz", "pxyz"])
@@ -209,7 +209,6 @@ impl UiApp {
             .add_filter("VASP (*.vasp)", &["vasp"])
             .pick_file()
         {
-            use gchemol::io::prelude::*;
             if let Ok(mols) = gchemol::io::read(path) {
                 let mols: Vec<_> = mols
                     // create bonds if necessary
@@ -247,7 +246,7 @@ impl UiApp {
         mut commands: Commands,
         mut state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+        molecule_query: Query<Entity, With<crate::player::Molecule>>,
     ) {
         if let Ok(molecule_entity) = molecule_query.get_single() {
             info!("remove molecule");
@@ -265,9 +264,9 @@ impl UiApp {
 impl UiApp {
     fn label_atoms(
         &mut self,
-        mut state: ResMut<UiState>,
+        state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        mut atoms_query: Query<(Entity, &crate::player::AtomIndex, &crate::player::Atom)>,
+        atoms_query: Query<(Entity, &crate::player::AtomIndex, &crate::player::Atom)>,
     ) {
         if state.label_atoms_checked {
             info!("create atoms labels ...");
@@ -293,18 +292,18 @@ mod panel {
     use crate::ui::AtomLabelEvent;
 
     use bevy::app::AppExit;
-    use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
-    use bevy_egui::{egui, EguiContexts, EguiPlugin};
+    use bevy::prelude::*;
+    use bevy_egui::{egui, EguiContexts};
 
     pub fn side_panels(
         mut state: ResMut<UiState>,
         mut contexts: EguiContexts,
         mut commands: Commands,
-        mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
-        mut label_events: EventWriter<AtomLabelEvent>,
-        mut atoms_query: Query<(Entity, &AtomIndex, &crate::player::Atom)>,
-        mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
-        mut writer: EventWriter<crate::net::StreamEvent>,
+        molecule_query: Query<Entity, With<crate::player::Molecule>>,
+        label_events: EventWriter<AtomLabelEvent>,
+        atoms_query: Query<(Entity, &AtomIndex, &crate::player::Atom)>,
+        traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::player::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
     ) {
@@ -377,7 +376,7 @@ mod panel {
                     if ui.button("Input files generator…").clicked() {
                         ui.close_menu();
                         // Spawn a second window
-                        let second_window_id = commands
+                        let _second_window_id = commands
                             .spawn(Window {
                                 title: "Input files generator".to_owned(),
                                 present_mode: bevy::window::PresentMode::AutoVsync,
@@ -428,7 +427,7 @@ mod panel {
 
         match action {
             Action::None => {}
-            Action::Load => app.load_trajectory(traj, state, writer),
+            Action::Load => app.load_trajectory(state, writer),
             Action::Save => app.save_trajectory(traj, state),
             Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
             Action::LabelAtoms => app.label_atoms(state, label_events, atoms_query),
@@ -442,7 +441,6 @@ mod panel {
 
 // [[file:../bevy.note::50cf0041][50cf0041]]
 mod input {
-    use super::compute::State;
     use bevy::prelude::*;
     use bevy::window::PrimaryWindow;
     use bevy_egui::{egui, EguiContext};
@@ -450,7 +448,7 @@ mod input {
     pub fn input_generator_window_system(
         mut state: ResMut<super::compute::State>,
         mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>,
-        mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        traj: ResMut<crate::molecule::MoleculeTrajectory>,
     ) {
         let Ok(mut ctx) = egui_ctx.get_single_mut() else { return; };
         let ctx = ctx.get_mut();
@@ -472,8 +470,6 @@ pub struct LabelPlugin {
 
 impl Plugin for LabelPlugin {
     fn build(&self, app: &mut App) {
-        use bevy_egui::EguiPlugin;
-
         app.add_event::<AtomLabelEvent>()
             .init_resource::<UiState>()
             .init_resource::<compute::State>()

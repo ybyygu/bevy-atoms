@@ -1,9 +1,11 @@
 // [[file:../bevy.note::495e3d25][495e3d25]]
+#![deny(warnings)]
+#![deny(clippy::all)]
+
 use bevy::prelude::*;
 use serde::*;
 
 use gchemol::Molecule;
-use gut::prelude::Result;
 // 495e3d25 ends here
 
 // [[file:../bevy.note::e05220eb][e05220eb]]
@@ -38,6 +40,7 @@ pub enum RemoteCommand {
 
 /// Settings to configure the network, both client and server
 #[derive(Resource, Default)]
+#[allow(dead_code)]
 struct NetworkSettings {
     address: Option<std::net::SocketAddr>,
 }
@@ -80,7 +83,6 @@ mod routes {
 
     use axum::extract::State;
     use axum::Json;
-    use crossbeam_channel::{Receiver, Sender};
 
     #[axum::debug_handler]
     async fn view_molecule(State(tx): State<RemoteCommandSender>, Json(mols): Json<Vec<Molecule>>) -> Result<(), AppError> {
@@ -92,7 +94,7 @@ mod routes {
     /// Start remote view service listening on molecules from remote client side.
     pub async fn serve_remote_view(task_tx: RemoteCommandSender) -> Result<()> {
         use axum::routing::post;
-        use axum::{routing::get, Router};
+        use axum::Router;
 
         super::info!("start axum service ...");
         let app = Router::new()

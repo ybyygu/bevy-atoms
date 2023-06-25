@@ -1,4 +1,8 @@
 // [[file:../../bevy.note::9c9c603b][9c9c603b]]
+#![deny(warnings)]
+#![deny(clippy::all)]
+#![allow(non_camel_case_types)]
+
 use bevy_egui::egui;
 use egui::Ui;
 use gut::prelude::*;

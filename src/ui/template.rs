@@ -1,11 +1,9 @@
 // [[file:../../bevy.note::126a69e6][126a69e6]]
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::path::Path;
 
 use bevy_egui::egui;
 use egui::Ui;
-use enum_iterator::Sequence;
 
 use gchemol::Molecule;
 use gut::prelude::*;

@@ -1,10 +1,11 @@
 // [[file:../bevy.note::a83ae206][a83ae206]]
-// #![deny(warnings)]
-
-use crate::player::*;
+#![deny(warnings)]
+#![deny(clippy::all)]
 
 use bevy::prelude::*;
-use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
+
+// use crate::player::*;
+use bevy_mod_picking::PickingCameraBundle;
 // a83ae206 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
@@ -12,7 +13,7 @@ use crate::player::FrameIndex;
 // 031857dd ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
-use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+use bevy_panorbit_camera::PanOrbitCamera;
 
 fn update_light_with_camera(
     mut param_set: ParamSet<(
@@ -24,13 +25,12 @@ fn update_light_with_camera(
     if let Ok(camera) = param_set.p1().get_single() {
         let camera_position = camera.translation;
         for (mut transform, _mesh) in param_set.p0().iter_mut() {
-            let distance = transform.translation.distance(camera_position);
             transform.translation = camera_position;
         }
     }
 
     if let Ok((camera, camera_transform)) = camera_query.get_single() {
-        let viewport = camera.world_to_viewport(camera_transform, Vec3::new(2.144404, 2.2027268, 2.6483808));
+        let _viewport = camera.world_to_viewport(camera_transform, Vec3::new(2.144404, 2.2027268, 2.6483808));
     }
 }
 // 711fbcb5 ends here
@@ -97,8 +97,6 @@ pub struct VisilizationState {
 
 impl MoleculeTrajectory {
     pub fn save_as(&self, path: &std::path::Path) {
-        use gchemol::io::prelude::*;
-
         if let Err(err) = gchemol::io::write(path, &self.mols) {
             error!("Write molecules error: {err:?}");
         }
@@ -118,7 +116,6 @@ fn keyboard_animation_control(keyboard_input: Res<Input<KeyCode>>, mut current_f
 fn traj_animation_player(
     traj: Res<MoleculeTrajectory>,
     current_frame: Res<CurrentFrame>,
-    vis_state: Res<VisilizationState>,
     mut visibility_query: Query<(&mut Visibility, &FrameIndex)>,
 ) {
     let nframes = traj.mols.len();
@@ -141,7 +138,6 @@ pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
     traj: Res<MoleculeTrajectory>,
 ) {
     // light

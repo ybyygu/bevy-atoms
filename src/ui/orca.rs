@@ -1,4 +1,8 @@
 // [[file:../../bevy.note::46a7bd1f][46a7bd1f]]
+#![deny(warnings)]
+#![deny(clippy::all)]
+#![allow(non_camel_case_types)]
+
 use bevy_egui::egui;
 use egui::Ui;
 use enum_iterator::Sequence;

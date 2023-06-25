@@ -3,8 +3,6 @@
 #![deny(clippy::all)]
 
 use super::{RemoteCommand, StreamEvent};
-use crate::net::ServerPlugin;
-use gchemol::Molecule;
 
 use bevy::prelude::*;
 // 6c039888 ends here
@@ -16,7 +14,7 @@ pub struct RemoteConsolePlugin;
 // [[file:../../bevy.note::22cddf8a][22cddf8a]]
 fn delete_command(
     mut commands: Commands,
-    mut molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    molecule_query: Query<Entity, With<crate::player::Molecule>>,
     mut reader: EventReader<StreamEvent>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {

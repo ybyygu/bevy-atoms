@@ -1,11 +1,15 @@
-// [[file:../../bevy.note::*imports][imports:1]]
+// [[file:../../bevy.note::e047f3bd][e047f3bd]]
+#![deny(warnings)]
+#![deny(clippy::all)]
+#![allow(non_camel_case_types)]
+
 use bevy_egui::egui;
 use egui::Ui;
 use enum_iterator::Sequence;
 
 use gchemol::Molecule;
 use gut::prelude::*;
-// imports:1 ends here
+// e047f3bd ends here
 
 // [[file:../../bevy.note::b03b7d99][b03b7d99]]
 #[derive(Clone, Default, Debug, PartialEq, Deserialize, Serialize, Sequence)]

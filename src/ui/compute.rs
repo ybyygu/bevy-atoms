@@ -1,7 +1,6 @@
 // [[file:../../bevy.note::83513dad][83513dad]]
 use bevy::prelude::Resource;
 use bevy_egui::egui;
-use bevy_egui::EguiContext;
 use egui::Ui;
 use gut::prelude::*;
 // 83513dad ends here
@@ -22,8 +21,6 @@ enum Code {
 // 52d286c4 ends here
 
 // [[file:../../bevy.note::ba17983a][ba17983a]]
-use std::collections::HashMap;
-
 #[derive(Debug, Deserialize, Serialize, Resource)]
 pub struct State {
     code: Code,
