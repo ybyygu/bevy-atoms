@@ -180,6 +180,40 @@ pub fn spawn_molecules(
 }
 // 1c6c0570 ends here
 
+// [[file:../bevy.note::92f358a8][92f358a8]]
+use bevy::window::PrimaryWindow;
+
+/// Load molecule if files were dropped into main molecule window
+fn drag_and_drop_files(
+    mut drag_drop_events: EventReader<FileDragAndDrop>,
+    mut mol_event_writer: EventWriter<crate::net::StreamEvent>,
+    primary_window: Query<Entity, With<PrimaryWindow>>,
+) {
+    use gchemol::prelude::FromFile;
+    use gchemol::Molecule;
+
+    let mut mols = vec![];
+    let primary_entity = primary_window.single();
+    for d in drag_drop_events.iter() {
+        if let FileDragAndDrop::DroppedFile { path_buf, window } = d {
+            // drop into main window
+            if *window == primary_entity {
+                debug!("Dropped \"{}\"", path_buf.to_str().unwrap());
+                if let Ok(mol) = Molecule::from_file(&path_buf) {
+                    mols.push(mol);
+                }
+            }
+        }
+    }
+
+    if !mols.is_empty() {
+        info!("Dropped {} Molecules.", mols.len());
+        let command = crate::net::RemoteCommand::Load(mols);
+        mol_event_writer.send(crate::net::StreamEvent(command));
+    }
+}
+// 92f358a8 ends here
+
 // [[file:../bevy.note::8ec82258][8ec82258]]
 #[derive(Debug, Clone)]
 pub struct MoleculePlugin {
@@ -203,6 +237,7 @@ impl Plugin for MoleculePlugin {
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)
             .add_system(keyboard_animation_control)
+            .add_system(drag_and_drop_files)
             .add_system(traj_animation_player);
     }
 }
