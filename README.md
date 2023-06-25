@@ -6,9 +6,11 @@ gchemol-view is a simple molecule viewer based on [gchemol](https://github.com/g
 ![img](data/72/9b0609-04b6-40c0-93db-5674f85b0738/screenshot.png)
 
 
-# Interesting features
+# Features
 
 -   Lightweight molecule viewer: fast to load molecule with thousands of atoms
+-   Load molecules by drag-and-drop for files or directories.
+-   Input files generator for VASP, ORCA, Gaussian and more.
 -   Remote view: view molecules locally sent from a remote client in the
     terminal without an X environment
 
@@ -77,11 +79,11 @@ If you are using XShell, you can refer to the image below:
 
 # Todo List
 
--   [ ] set atom freezing codes for optimization
--   [ ] select atoms by atom serial numbers
 -   [ ] measure distance, angle, torsion angle
 -   [ ] visuailize volume data: orbital, DOS, etc.
+-   [ ] select atoms by atom serial numbers
 -   [ ] better animation system
+-   [ ] set atom freezing codes for optimization
 
 
 # Credits
