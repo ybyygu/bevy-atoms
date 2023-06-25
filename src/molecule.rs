@@ -198,9 +198,19 @@ fn drag_and_drop_files(
         if let FileDragAndDrop::DroppedFile { path_buf, window } = d {
             // drop into main window
             if *window == primary_entity {
-                debug!("Dropped \"{}\"", path_buf.to_str().unwrap());
-                if let Ok(mol) = Molecule::from_file(&path_buf) {
-                    mols.push(mol);
+                if path_buf.is_file() {
+                    info!("Dropped a file: {:?}", path_buf);
+                    if let Ok(mol) = Molecule::from_file(&path_buf) {
+                        mols.push(mol);
+                    }
+                } else if path_buf.is_dir() {
+                    info!("Dropped a directory: {:?}", path_buf);
+                    let files = gchemol::io::find_files("", &path_buf, true);
+                    for f in files {
+                        if let Ok(mol) = Molecule::from_file(f) {
+                            mols.push(mol);
+                        }
+                    }
                 }
             }
         }
