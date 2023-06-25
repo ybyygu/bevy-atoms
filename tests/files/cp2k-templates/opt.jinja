@@ -1,0 +1,55 @@
+! -*- cp2k -*-
+&GLOBAL
+  # PRINT_LEVEL low
+  PROJECT bbm-cp2k-opt
+  RUN_TYPE GEO_OPT
+&END GLOBAL
+&MOTION
+  &GEO_OPT
+     TYPE MINIMIZATION        # Default value: MINIMIZATION; valid keywords: MINIMIZATION, TRANSITION_STATE
+     MAX_DR    1.0E-03        # tolerance on the max displacements, Default value: 3.0E-3 [bohr]
+     MAX_FORCE 1.0E-03        # tolerance on the max atomic forces, Default value: 4.5E-4 [hartree/bohr]
+     RMS_DR    1.0E-03        # tolerance on the root-mean-square displacements, Default value: 1.5E-3 [bohr]
+     RMS_FORCE 1.0E-03        # tolerance on the root-mean-square forces, Default value: 3.0E-4 [hartree/bohr]
+     MAX_ITER  500            # max no. of geo opt iteration; Default value: 200
+     OPTIMIZER BFGS           # opt algorithm. Default value: BFGS; valid keywords: BFGS, CG, LBFGS
+  &END GEO_OPT
+&END MOTION
+&FORCE_EVAL
+  METHOD Quickstep
+  &DFT
+    #CHARGE  0
+    #MULTIPLICITY  1
+    BASIS_SET_FILE_NAME BASIS_SET
+    POTENTIAL_FILE_NAME POTENTIAL
+    &SCF
+      &OT ON
+      &END OT
+    &END SCF
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+  &END DFT
+  # subsys section
+&SUBSYS
+  &CELL
+    PERIODIC XYZ
+    A {% for v in molecule.unit_cell.va %} {{ v | format}} {% endfor %}
+    B {% for v in molecule.unit_cell.vb %} {{ v | format}} {% endfor %}
+    C {% for v in molecule.unit_cell.vc %} {{ v | format}} {% endfor %}
+  &END CELL
+  &COORD
+    Unit Angstrom
+    {%- for a in molecule.atoms %}
+    {{a.symbol}} {{ a.x | format}} {{ a.y | format}} {{ a.z | format}}
+    {%- endfor %}
+  &END COORD
+  {%- for e in molecule.element_types %}
+  &KIND {{e.0}}
+    BASIS_SET DZVP-GTH-PBE
+    POTENTIAL GTH-PBE
+  &END KIND
+  {%- endfor %}
+&END SUBSYS
+&END FORCE_EVAL

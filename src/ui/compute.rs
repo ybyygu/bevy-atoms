@@ -13,6 +13,7 @@ enum Code {
     Vasp,
     Gaussian,
     Orca,
+    Cp2k,
 }
 // 52d286c4 ends here
 
@@ -25,6 +26,7 @@ pub struct State {
     vasp_state: super::vasp::State,
     orca_state: super::orca::State,
     gaussian_state: super::gaussian::State,
+    cp2k_state: super::cp2k::State,
 }
 
 impl Default for State {
@@ -34,6 +36,7 @@ impl Default for State {
             vasp_state: super::vasp::State::default(),
             orca_state: super::orca::State::default(),
             gaussian_state: super::gaussian::State::default(),
+            cp2k_state: super::cp2k::State::default(),
         }
     }
 }
@@ -47,6 +50,7 @@ impl State {
 
         ui.vertical(|ui| {
             ui.selectable_value(&mut self.code, Code::Vasp, "VASP");
+            ui.selectable_value(&mut self.code, Code::Cp2k, "CP2K");
             ui.selectable_value(&mut self.code, Code::Orca, "ORCA");
             ui.selectable_value(&mut self.code, Code::Gaussian, "Gaussian");
         });
@@ -75,11 +79,14 @@ impl State {
             Code::Vasp => {
                 self.vasp_state.show(ui);
             }
-            Code::Gaussian => {
-                self.gaussian_state.show(ui, mol);
+            Code::Cp2k => {
+                self.cp2k_state.show(ui, mol);
             }
             Code::Orca => {
                 self.orca_state.show(ui);
+            }
+            Code::Gaussian => {
+                self.gaussian_state.show(ui, mol);
             }
             _ => {
                 ui.label("Under Construction!");

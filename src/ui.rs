@@ -27,6 +27,7 @@ macro_rules! show_combo_box_enum {
 
 // [[file:../bevy.note::8d1285a1][8d1285a1]]
 mod compute;
+mod cp2k;
 mod gaussian;
 mod orca;
 mod template;
