@@ -9,8 +9,8 @@
 // mod loading;
 // mod menu;
 mod animation;
+mod base;
 mod net;
-mod player;
 mod ui;
 // mod task;
 

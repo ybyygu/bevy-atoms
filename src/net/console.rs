@@ -14,7 +14,7 @@ pub struct RemoteConsolePlugin;
 // [[file:../../bevy.note::22cddf8a][22cddf8a]]
 fn delete_command(
     mut commands: Commands,
-    molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    molecule_query: Query<Entity, With<crate::base::Molecule>>,
     mut reader: EventReader<StreamEvent>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
@@ -36,7 +36,7 @@ fn load_command(
     mut reader: EventReader<StreamEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    molecule_query: Query<Entity, With<crate::player::Molecule>>,
+    molecule_query: Query<Entity, With<crate::base::Molecule>>,
     mut arcball_camera: Query<&mut PanOrbitCamera>,
     mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
 ) {
@@ -56,7 +56,7 @@ fn load_command(
                     for (fi, mol) in mols.iter().enumerate() {
                         // only show the first frame
                         let visible = fi == 0;
-                        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
+                        crate::base::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
                     }
                     // recenter view
                     if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {

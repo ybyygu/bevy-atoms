@@ -121,7 +121,7 @@ fn create_label_text(asset_server: &Res<AssetServer>, text: impl Into<String>, v
     .with_text_alignment(TextAlignment::Center)
     .with_style(style);
 
-    text.visibility = crate::player::visibility(visible);
+    text.visibility = crate::base::visibility(visible);
     text
 }
 
@@ -167,7 +167,7 @@ fn handle_atom_label_events(
     asset_server: Res<AssetServer>,
     mut events: EventReader<AtomLabelEvent>,
     label_query: Query<Entity, With<AtomLabel>>,
-    frame_query: Query<(Entity, &crate::player::FrameIndex, &Visibility), With<crate::player::Atom>>,
+    frame_query: Query<(Entity, &crate::base::FrameIndex, &Visibility), With<crate::base::Atom>>,
 ) {
     for event in events.iter() {
         match event {
@@ -246,7 +246,7 @@ impl UiApp {
         mut commands: Commands,
         mut state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        molecule_query: Query<Entity, With<crate::player::Molecule>>,
+        molecule_query: Query<Entity, With<crate::base::Molecule>>,
     ) {
         if let Ok(molecule_entity) = molecule_query.get_single() {
             info!("remove molecule");
@@ -266,7 +266,7 @@ impl UiApp {
         &mut self,
         state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        atoms_query: Query<(Entity, &crate::player::AtomIndex, &crate::player::Atom)>,
+        atoms_query: Query<(Entity, &crate::base::AtomIndex, &crate::base::Atom)>,
     ) {
         if state.label_atoms_checked {
             info!("create atoms labels ...");
@@ -288,7 +288,7 @@ impl UiApp {
 mod panel {
     use super::{Action, UiApp, UiState};
 
-    use crate::player::AtomIndex;
+    use crate::base::AtomIndex;
     use crate::ui::AtomLabelEvent;
 
     use bevy::app::AppExit;
@@ -299,12 +299,12 @@ mod panel {
         mut state: ResMut<UiState>,
         mut contexts: EguiContexts,
         mut commands: Commands,
-        molecule_query: Query<Entity, With<crate::player::Molecule>>,
+        molecule_query: Query<Entity, With<crate::base::Molecule>>,
         label_events: EventWriter<AtomLabelEvent>,
-        atoms_query: Query<(Entity, &AtomIndex, &crate::player::Atom)>,
+        atoms_query: Query<(Entity, &AtomIndex, &crate::base::Atom)>,
         traj: ResMut<crate::molecule::MoleculeTrajectory>,
         writer: EventWriter<crate::net::StreamEvent>,
-        mut current_frame: ResMut<crate::player::CurrentFrame>,
+        mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
     ) {
         let ctx = contexts.ctx_mut();

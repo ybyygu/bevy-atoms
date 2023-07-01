@@ -4,12 +4,11 @@
 
 use bevy::prelude::*;
 
-// use crate::player::*;
 use bevy_mod_picking::PickingCameraBundle;
 // a83ae206 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
-use crate::player::FrameIndex;
+use crate::base::FrameIndex;
 // 031857dd ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
@@ -132,7 +131,7 @@ fn traj_animation_player(
 // 20198b2d ends here
 
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
-use crate::player::CurrentFrame;
+use crate::base::CurrentFrame;
 
 pub fn spawn_molecules(
     mut commands: Commands,
@@ -175,7 +174,7 @@ pub fn spawn_molecules(
     for (fi, mol) in traj.mols.iter().enumerate() {
         // only show the first frame
         let visible = fi == 0;
-        crate::player::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
+        crate::base::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
     }
 }
 // 1c6c0570 ends here
