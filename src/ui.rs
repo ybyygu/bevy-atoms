@@ -67,6 +67,7 @@ impl AtomLabel {
 pub struct UiState {
     label_atoms_checked: bool,
     message: String,
+    periodic_table_window_open: bool,
 }
 
 impl Default for UiState {
@@ -74,6 +75,7 @@ impl Default for UiState {
         Self {
             label_atoms_checked: false,
             message: "Tip: You can press `q` to exit.".to_owned(),
+            periodic_table_window_open: false,
         }
     }
 }
@@ -316,6 +318,17 @@ mod panel {
 
         let mut action = Action::None;
         let mut app = UiApp::default();
+
+        // ui for periodic table
+        egui::Window::new("Periodic Table")
+            .id(egui::Id::new("periodic_table"))
+            // will be activated by menu item: tools/periodic table
+            .open(&mut state.periodic_table_window_open)
+            .anchor(egui::Align2::CENTER_TOP, [0.0, 0.0])
+            .collapsible(false)
+            .default_width(500.0)
+            .show(ctx, super::periodic_table::show);
+
         egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -369,9 +382,11 @@ mod panel {
                         state.message = "no implemented yet".into();
                     }
                 });
+
                 ui.menu_button("Tools", |ui| {
                     if ui.button("Periodic table…").clicked() {
-                        state.message = "no implemented yet".into();
+                        state.periodic_table_window_open = true;
+                        ui.close_menu();
                     }
                     if ui.button("Input files generator…").clicked() {
                         ui.close_menu();
@@ -438,6 +453,270 @@ mod panel {
     }
 }
 // bccb8119 ends here
+
+// [[file:../bevy.note::c153256c][c153256c]]
+mod periodic_table {
+    use bevy_egui::egui;
+    use egui::{Button, Color32, Ui};
+    use gchemol::Atom;
+
+    // https://github.com/eliaxelang007/Periodic-Table-Rs/blob/master/_data_formatting/stage_2/_out.json
+    fn electronic_configuration(symbol: &str) -> String {
+        match symbol {
+            "H" => format!("1s¹"),
+            "He" => format!("1s²"),
+            "Li" => format!("[He] 2s¹"),
+            "Be" => format!("[He] 2s²"),
+            "B" => format!("[He] 2s² 2p¹"),
+            "C" => format!("[He] 2s² 2p²"),
+            "N" => format!("[He] 2s² 2p³"),
+            "O" => format!("[He] 2s² 2p⁴"),
+            "F" => format!("[He] 2s² 2p⁵"),
+            "Ne" => format!("[He] 2s² 2p⁶"),
+            "Na" => format!("[Ne] 3s¹"),
+            "Mg" => format!("[Ne] 3s²"),
+            "Al" => format!("[Ne] 3s² 3p¹"),
+            "Si" => format!("[Ne] 3s² 3p²"),
+            "P" => format!("[Ne] 3s² 3p³"),
+            "S" => format!("[Ne] 3s² 3p⁴"),
+            "Cl" => format!("[Ne] 3s² 3p⁵"),
+            "Ar" => format!("[Ne] 3s² 3p⁶"),
+            "K" => format!("[Ar] 4s¹"),
+            "Ca" => format!("[Ar] 4s²"),
+            "Sc" => format!("[Ar] 4s² 3d¹"),
+            "Ti" => format!("[Ar] 4s² 3d²"),
+            "V" => format!("[Ar] 4s² 3d³"),
+            "Cr" => format!("[Ar] 3d⁵ 4s¹"),
+            "Mn" => format!("[Ar] 4s² 3d⁵"),
+            "Fe" => format!("[Ar] 4s² 3d⁶"),
+            "Co" => format!("[Ar] 4s² 3d⁷"),
+            "Ni" => format!("[Ar] 4s² 3d⁸"),
+            "Cu" => format!("[Ar] 4s¹ 3d¹⁰"),
+            "Zn" => format!("[Ar] 4s² 3d¹⁰"),
+            "Ga" => format!("[Ar] 4s² 3d¹⁰ 4p¹"),
+            "Ge" => format!("[Ar] 4s² 3d¹⁰ 4p²"),
+            "As" => format!("[Ar] 4s² 3d¹⁰ 4p³"),
+            "Se" => format!("[Ar] 4s² 3d¹⁰ 4p⁴"),
+            "Br" => format!("[Ar] 4s² 3d¹⁰ 4p⁵"),
+            "Kr" => format!("[Ar] 4s² 3d¹⁰ 4p⁶"),
+            "Rb" => format!("[Kr] 5s¹"),
+            "Sr" => format!("[Kr] 5s²"),
+            "Y" => format!("[Kr] 5s² 4d¹"),
+            "Zr" => format!("[Kr] 5s² 4d²"),
+            "Nb" => format!("[Kr] 5s¹ 4d⁴"),
+            "Mo" => format!("[Kr] 5s¹ 4d⁵"),
+            "Tc" => format!("[Kr] 5s² 4d⁵"),
+            "Ru" => format!("[Kr] 5s¹ 4d⁷"),
+            "Rh" => format!("[Kr] 5s¹ 4d⁸"),
+            "Pd" => format!("[Kr] 4d¹⁰"),
+            "Ag" => format!("[Kr] 5s¹ 4d¹⁰"),
+            "Cd" => format!("[Kr] 5s² 4d¹⁰"),
+            "In" => format!("[Kr] 5s² 4d¹⁰ 5p¹"),
+            "Sn" => format!("[Kr] 5s² 4d¹⁰ 5p²"),
+            "Sb" => format!("[Kr] 5s² 4d¹⁰ 5p³"),
+            "Te" => format!("[Kr] 5s² 4d¹⁰ 5p⁴"),
+            "I" => format!("[Kr] 5s² 4d¹⁰ 5p⁵"),
+            "Xe" => format!("[Kr] 5s² 4d¹⁰ 5p⁶"),
+            "Cs" => format!("[Xe] 6s¹"),
+            "Ba" => format!("[Xe] 6s²"),
+            "La" => format!("[Xe] 6s² 5d¹"),
+            "Ce" => format!("[Xe] 6s² 4f¹ 5d¹"),
+            "Pr" => format!("[Xe] 6s² 4f³"),
+            "Nd" => format!("[Xe] 6s² 4f⁴"),
+            "Pm" => format!("[Xe] 6s² 4f⁵"),
+            "Sm" => format!("[Xe] 6s² 4f⁶"),
+            "Eu" => format!("[Xe] 6s² 4f⁷"),
+            "Gd" => format!("[Xe] 6s² 4f⁷ 5d¹"),
+            "Tb" => format!("[Xe] 6s² 4f⁹"),
+            "Dy" => format!("[Xe] 6s² 4f¹⁰"),
+            "Ho" => format!("[Xe] 6s² 4f¹¹"),
+            "Er" => format!("[Xe] 6s² 4f¹²"),
+            "Tm" => format!("[Xe] 6s² 4f¹³"),
+            "Yb" => format!("[Xe] 6s² 4f¹⁴"),
+            "Lu" => format!("[Xe] 6s² 4f¹⁴ 5d¹"),
+            "Hf" => format!("[Xe] 6s² 4f¹⁴ 5d²"),
+            "Ta" => format!("[Xe] 6s² 4f¹⁴ 5d³"),
+            "W" => format!("[Xe] 6s² 4f¹⁴ 5d⁴"),
+            "Re" => format!("[Xe] 6s² 4f¹⁴ 5d⁵"),
+            "Os" => format!("[Xe] 6s² 4f¹⁴ 5d⁶"),
+            "Ir" => format!("[Xe] 6s² 4f¹⁴ 5d⁷"),
+            "Pt" => format!("[Xe] 6s¹ 4f¹⁴ 5d⁹"),
+            "Au" => format!("[Xe] 6s¹ 4f¹⁴ 5d¹⁰"),
+            "Hg" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰"),
+            "Tl" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p¹"),
+            "Pb" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p²"),
+            "Bi" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p³"),
+            "Po" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p⁴"),
+            "At" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p⁵"),
+            "Rn" => format!("[Xe] 6s² 4f¹⁴ 5d¹⁰ 6p⁶"),
+            "Fr" => format!("[Rn] 7s¹"),
+            "Ra" => format!("[Rn] 7s²"),
+            "Ac" => format!("[Rn] 7s² 6d¹"),
+            "Th" => format!("[Rn] 7s² 6d²"),
+            "Pa" => format!("[Rn] 7s² 5f² 6d¹"),
+            "U" => format!("[Rn] 7s² 5f³ 6d¹"),
+            "Np" => format!("[Rn] 7s² 5f⁴ 6d¹"),
+            "Pu" => format!("[Rn] 7s² 5f⁶"),
+            "Am" => format!("[Rn] 7s² 5f⁷"),
+            "Cm" => format!("[Rn] 7s² 5f⁷ 6d¹"),
+            "Bk" => format!("[Rn] 7s² 5f⁹"),
+            "Cf" => format!("[Rn] 7s² 5f¹⁰"),
+            "Es" => format!("[Rn] 7s² 5f¹¹"),
+            "Fm" => format!("[Rn] 5f¹² 7s²"),
+            "Md" => format!("[Rn] 7s² 5f¹³"),
+            "No" => format!("[Rn] 7s² 5f¹⁴"),
+            "Lr" => format!("[Rn] 7s² 5f¹⁴ 6d¹"),
+            "Rf" => format!("[Rn] 7s² 5f¹⁴ 6d²"),
+            "Db" => format!("[Rn] 7s² 5f¹⁴ 6d³"),
+            "Sg" => format!("[Rn] 7s² 5f¹⁴ 6d⁴"),
+            "Bh" => format!("[Rn] 7s² 5f¹⁴ 6d⁵"),
+            "Hs" => format!("[Rn] 7s² 5f¹⁴ 6d⁶"),
+            "Mt" => format!("[Rn] 7s² 5f¹⁴ 6d⁷ (calculated)"),
+            "Ds" => format!("[Rn] 7s² 5f¹⁴ 6d⁸ (predicted)"),
+            "Rg" => format!("[Rn] 7s² 5f¹⁴ 6d⁹ (predicted)"),
+            "Cn" => format!("[Rn] 7s² 5f¹⁴ 6d¹⁰ (predicted)"),
+            "Nh" => format!("[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹ (predicted)"),
+            "Fl" => format!("[Rn] 7s² 7p² 5f¹⁴ 6d¹⁰ (predicted)"),
+            "Mc" => format!("[Rn] 7s² 7p³ 5f¹⁴ 6d¹⁰ (predicted)"),
+            "Lv" => format!("[Rn] 7s² 7p⁴ 5f¹⁴ 6d¹⁰ (predicted)"),
+            "Ts" => format!("[Rn] 7s² 7p⁵ 5f¹⁴ 6d¹⁰ (predicted)"),
+            "Og" => format!("[Rn] 7s² 7p⁶ 5f¹⁴ 6d¹⁰ (predicted)"),
+            _ => format!("todo"),
+        }
+    }
+
+    fn new_element_button(ui: &mut Ui, symbol: &str, color: Color32) {
+        let atom = Atom::new(symbol, [0.0; 3]);
+        let name = atom.kind().name();
+        let number = format!("{}", atom.number());
+        let cov_radius = format!("{}", atom.get_cov_radius().map(|x| x.to_string()).unwrap_or("N/A".into()));
+        let vdw_radius = format!("{}", atom.get_vdw_radius().map(|x| x.to_string()).unwrap_or("N/A".into()));
+        let symbol_txt = format!("{symbol:2}");
+        ui.add(Button::new(symbol_txt).fill(color)).on_hover_ui(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Name:");
+                ui.label(name);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Number:");
+                ui.label(number);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Covalent radius:");
+                ui.label(cov_radius);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Van der Waals radius:");
+                ui.label(vdw_radius);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Electronic configuration:");
+                ui.label(electronic_configuration(symbol));
+            });
+        });
+    }
+
+    pub fn show(ui: &mut Ui) {
+        egui::Grid::new("grid_periodic_table")
+            .striped(true)
+            .num_columns(18)
+            .min_col_width(15.0)
+            .show(ui, |ui| {
+                new_element_button(ui, "H", Color32::WHITE);
+                // void space
+                for _ in 0..16 {
+                    ui.label("");
+                }
+                new_element_button(ui, "He", Color32::WHITE);
+                ui.end_row();
+                // 2
+                new_element_button(ui, "Li", Color32::WHITE);
+                new_element_button(ui, "Be", Color32::WHITE);
+                // void space
+                for _ in 0..10 {
+                    ui.label("");
+                }
+                new_element_button(ui, "B", Color32::WHITE);
+                new_element_button(ui, "C", Color32::WHITE);
+                new_element_button(ui, "N", Color32::WHITE);
+                new_element_button(ui, "O", Color32::WHITE);
+                new_element_button(ui, "F", Color32::WHITE);
+                new_element_button(ui, "Ne", Color32::WHITE);
+                ui.end_row();
+                // 3
+                new_element_button(ui, "Na", Color32::WHITE);
+                new_element_button(ui, "Mg", Color32::WHITE);
+                // void space
+                for _ in 0..10 {
+                    ui.label("");
+                }
+                new_element_button(ui, "Al", Color32::WHITE);
+                new_element_button(ui, "Si", Color32::WHITE);
+                new_element_button(ui, "P", Color32::WHITE);
+                new_element_button(ui, "S", Color32::WHITE);
+                new_element_button(ui, "Cl", Color32::WHITE);
+                new_element_button(ui, "Ar", Color32::WHITE);
+                ui.end_row();
+                new_element_button(ui, "K", Color32::WHITE);
+                new_element_button(ui, "Ca", Color32::WHITE);
+                new_element_button(ui, "Sc", Color32::WHITE);
+                new_element_button(ui, "Ti", Color32::WHITE);
+                new_element_button(ui, "V", Color32::WHITE);
+                new_element_button(ui, "Cr", Color32::WHITE);
+                new_element_button(ui, "Mn", Color32::WHITE);
+                new_element_button(ui, "Fe", Color32::WHITE);
+                new_element_button(ui, "Co", Color32::WHITE);
+                new_element_button(ui, "Ni", Color32::WHITE);
+                new_element_button(ui, "Cu", Color32::WHITE);
+                new_element_button(ui, "Zn", Color32::WHITE);
+                new_element_button(ui, "Ga", Color32::WHITE);
+                new_element_button(ui, "Ge", Color32::WHITE);
+                new_element_button(ui, "As", Color32::WHITE);
+                new_element_button(ui, "Se", Color32::WHITE);
+                new_element_button(ui, "Br", Color32::WHITE);
+                new_element_button(ui, "Kr", Color32::WHITE);
+                ui.end_row();
+                new_element_button(ui, "Rb", Color32::WHITE);
+                new_element_button(ui, "Sr", Color32::WHITE);
+                new_element_button(ui, "Y", Color32::WHITE);
+                new_element_button(ui, "Zr", Color32::WHITE);
+                new_element_button(ui, "Nb", Color32::WHITE);
+                new_element_button(ui, "Mo", Color32::WHITE);
+                new_element_button(ui, "Tc", Color32::WHITE);
+                new_element_button(ui, "Ru", Color32::WHITE);
+                new_element_button(ui, "Rh", Color32::WHITE);
+                new_element_button(ui, "Pd", Color32::WHITE);
+                new_element_button(ui, "Ag", Color32::WHITE);
+                new_element_button(ui, "Cd", Color32::WHITE);
+                new_element_button(ui, "In", Color32::WHITE);
+                new_element_button(ui, "Sn", Color32::WHITE);
+                new_element_button(ui, "Sb", Color32::WHITE);
+                new_element_button(ui, "Te", Color32::WHITE);
+                new_element_button(ui, "I", Color32::WHITE);
+                new_element_button(ui, "Xe", Color32::WHITE);
+                ui.end_row();
+                new_element_button(ui, "Cs", Color32::WHITE);
+                new_element_button(ui, "Ba", Color32::WHITE);
+                new_element_button(ui, "La", Color32::WHITE);
+                new_element_button(ui, "Hf", Color32::WHITE);
+                new_element_button(ui, "Ta", Color32::WHITE);
+                new_element_button(ui, "W", Color32::WHITE);
+                new_element_button(ui, "Re", Color32::WHITE);
+                new_element_button(ui, "Os", Color32::WHITE);
+                new_element_button(ui, "Ir", Color32::WHITE);
+                new_element_button(ui, "Pt", Color32::WHITE);
+                new_element_button(ui, "Au", Color32::WHITE);
+                new_element_button(ui, "Hg", Color32::WHITE);
+                new_element_button(ui, "Tl", Color32::WHITE);
+                new_element_button(ui, "Pb", Color32::WHITE);
+                new_element_button(ui, "Bi", Color32::WHITE);
+                new_element_button(ui, "Po", Color32::WHITE);
+                new_element_button(ui, "At", Color32::WHITE);
+                new_element_button(ui, "Rn", Color32::WHITE);
+            });
+    }
+}
+// c153256c ends here
 
 // [[file:../bevy.note::50cf0041][50cf0041]]
 mod input {
