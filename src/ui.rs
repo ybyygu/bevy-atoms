@@ -433,6 +433,11 @@ mod panel {
                 });
             }
 
+            // show ui for molecule control
+            if !traj.mols.is_empty() {
+                super::molecule_traj::show(ui, &traj.mols, &mut current_frame);
+            }
+
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
 
@@ -453,6 +458,26 @@ mod panel {
     }
 }
 // bccb8119 ends here
+
+// [[file:../bevy.note::a06e5732][a06e5732]]
+mod molecule_traj {
+    use bevy_egui::egui;
+    use egui::Ui;
+    use gchemol::Molecule;
+
+    pub fn show(ui: &mut Ui, traj: &[Molecule], current_frame: &mut crate::base::CurrentFrame) {
+        egui::CollapsingHeader::new("Molecule list").default_open(true).show(ui, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.vertical(|ui| {
+                    for (i, mol) in traj.iter().enumerate() {
+                        let _ = ui.selectable_value(&mut current_frame.0, i as isize, mol.title());
+                    }
+                })
+            });
+        });
+    }
+}
+// a06e5732 ends here
 
 // [[file:../bevy.note::c153256c][c153256c]]
 mod periodic_table {

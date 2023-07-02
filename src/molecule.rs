@@ -181,6 +181,24 @@ pub fn spawn_molecules(
 
 // [[file:../bevy.note::92f358a8][92f358a8]]
 use bevy::window::PrimaryWindow;
+use gchemol::Molecule;
+use std::path::Path;
+
+/// update molecule title and bonds for better view
+fn update_mol_from_path(mol: &mut Molecule, f: &Path) {
+    // take file name and its parent directory as the molecule title
+    let mut s: Vec<_> = f.iter().rev().take(2).filter_map(|x| x.to_str()).collect();
+    if !s.is_empty() {
+        s.reverse();
+        let s = s.join("/");
+        mol.set_title(s);
+    }
+    if mol.nbonds() == 0 {
+        let lat = mol.unbuild_crystal();
+        mol.rebond();
+        mol.lattice = lat;
+    }
+}
 
 /// Load molecule if files were dropped into main molecule window
 fn drag_and_drop_files(
@@ -189,7 +207,6 @@ fn drag_and_drop_files(
     primary_window: Query<Entity, With<PrimaryWindow>>,
 ) {
     use gchemol::prelude::FromFile;
-    use gchemol::Molecule;
 
     let mut mols = vec![];
     let primary_entity = primary_window.single();
@@ -199,14 +216,16 @@ fn drag_and_drop_files(
             if *window == primary_entity {
                 if path_buf.is_file() {
                     info!("Dropped a file: {:?}", path_buf);
-                    if let Ok(mol) = Molecule::from_file(&path_buf) {
+                    if let Ok(mut mol) = Molecule::from_file(&path_buf) {
+                        update_mol_from_path(&mut mol, &path_buf);
                         mols.push(mol);
                     }
                 } else if path_buf.is_dir() {
                     info!("Dropped a directory: {:?}", path_buf);
                     let files = gchemol::io::find_files("", &path_buf, true);
                     for f in files {
-                        if let Ok(mol) = Molecule::from_file(f) {
+                        if let Ok(mut mol) = Molecule::from_file(&f) {
+                            update_mol_from_path(&mut mol, &f);
                             mols.push(mol);
                         }
                     }

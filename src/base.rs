@@ -53,6 +53,7 @@ fn create_line_segment(
 pub struct CurrentFrame(pub isize);
 
 impl CurrentFrame {
+    /// Return the index of current frame. Return None if `nframes` is 0.
     pub fn index(&self, nframes: usize) -> Option<usize> {
         // no trajecotry loaded
         if nframes == 0 {
