@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.2.12"
+version = "0.2.13"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
@@ -86,7 +86,7 @@ bevy-inspector-egui = { version = "0.18.3", default-features = false }
 # native build only:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { version = "4", features = ["derive"] }
-gchemol = { version = "0.1.6", features = ["adhoc"] }
+gchemol = { version = "0.1.7", features = ["adhoc"] }
 
 [build-dependencies]
 embed-resource = "1.4"
