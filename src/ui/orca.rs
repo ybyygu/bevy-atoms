@@ -119,6 +119,11 @@ struct Settings {
     symmetry: Symmetry,
     dft_grid: Option<DFTGrid>,
     basis_set: BasisSet,
+    // put a different basis set on a specific atom
+    extra_basis_set: Option<BasisSet>,
+    extra_basis_set_atoms: Vec<usize>,
+    #[serde(skip)]
+    _extra_basis_set_atoms: String,
     charge: isize,
     multiplicity: Multiplicity,
     scf_type: Option<SCFType>,
@@ -210,6 +215,28 @@ impl State {
                     ui.end_row();
                     ui.label("Dispersion");
                     show_combo_box_enum!("orca-dispersion", ui, self.settings.dispersion, Dispersion, 200.0);
+                    ui.end_row();
+                    // allow user set extra basis set for some atoms
+                    ui.hyperlink_to("Extra basis set", "https://sites.google.com/site/orcainputlibrary/basis-sets");
+                    show_combo_box_enum!("orca-extra-basis", ui, self.settings.extra_basis_set, BasisSet, 200.0);
+                    ui.label("for atoms:")
+                        .on_hover_text("put a different basis set on a specific atom");
+                    if ui
+                        .add(egui::TextEdit::singleline(&mut self.settings._extra_basis_set_atoms).clip_text(false))
+                        .on_hover_text("for example: 1,5,8-10,12")
+                        .lost_focus()
+                    {
+                        if !self.settings._extra_basis_set_atoms.is_empty() {
+                            if let Ok(s) = gut::utils::parse_numbers_human_readable(&self.settings._extra_basis_set_atoms) {
+                                if let Ok(t) = gut::utils::abbreviate_numbers_human_readable(&s) {
+                                    self.settings._extra_basis_set_atoms = t;
+                                    self.settings.extra_basis_set_atoms = s;
+                                    // require write geometry
+                                    self.settings.write_molecule_geometry = true;
+                                }
+                            }
+                        }
+                    }
                     // RI
                     ui.end_row();
                     ui.label("RI Approximation");
