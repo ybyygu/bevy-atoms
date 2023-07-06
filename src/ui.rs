@@ -268,14 +268,18 @@ impl UiApp {
         &mut self,
         state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
+        selected_atoms: Res<crate::molecule::SelectedAtoms>,
         atoms_query: Query<(Entity, &crate::base::AtomIndex, &crate::base::Atom)>,
     ) {
         if state.label_atoms_checked {
             info!("create atoms labels ...");
             for (entity, atom_index, atom) in atoms_query.iter() {
-                let label = atom.get_label(atom_index.0);
-                if !label.is_empty() {
-                    label_events.send(AtomLabelEvent::Create((entity, label)));
+                // only label selected atoms
+                if selected_atoms.0.is_empty() || selected_atoms.0.contains(&atom_index.0) {
+                    let label = atom.get_label(atom_index.0);
+                    if !label.is_empty() {
+                        label_events.send(AtomLabelEvent::Create((entity, label)));
+                    }
                 }
             }
         } else {
@@ -458,7 +462,7 @@ mod panel {
             Action::Load => app.load_trajectory(state, writer),
             Action::Save => app.save_trajectory(traj, state),
             Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
-            Action::LabelAtoms => app.label_atoms(state, label_events, atoms_query),
+            Action::LabelAtoms => app.label_atoms(state, label_events, selected_atoms, atoms_query),
             _ => {
                 state.message = format!("handler for action {action:?} is not implemented yet");
             }

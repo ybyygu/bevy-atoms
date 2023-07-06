@@ -14,7 +14,7 @@ use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
-use bevy_mod_picking::DefaultPickingPlugins;
+use bevy_mod_picking::prelude::{DebugPickingPlugin, DefaultPickingPlugins};
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
 use bevy::app::AppExit;
@@ -77,7 +77,8 @@ impl ViewerCli {
         let mol_plugin = crate::molecule::MoleculePlugin::from_mols(mols);
 
         app.add_plugin(EguiPlugin)
-            .add_plugins(DefaultPickingPlugins)
+            // do not show debug ui
+            .add_plugins(DefaultPickingPlugins.build().disable::<DebugPickingPlugin>())
             // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
             .insert_resource(WinitSettings::desktop_app())
             // Set background color
