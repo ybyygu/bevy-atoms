@@ -1,6 +1,6 @@
 // [[file:../bevy.note::25b936c5][25b936c5]]
 use bevy::prelude::*;
-use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
+use bevy_mod_picking::prelude::*;
 
 pub fn visibility(visible: bool) -> Visibility {
     if visible {
@@ -383,6 +383,24 @@ fn create_lattice(
 }
 // 38660d10 ends here
 
+// [[file:../bevy.note::c989001a][c989001a]]
+// https://github.com/aevyrie/bevy_mod_picking/blob/main/examples/tinted_highlight.rs
+use bevy::math::vec4;
+
+const HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
+    // do not react on hover
+    hovered: Some(HighlightKind::new_dynamic(|matl| StandardMaterial { ..matl.to_owned() })),
+    pressed: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
+        base_color: Color::YELLOW,
+        ..matl.to_owned()
+    })),
+    selected: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
+        base_color: Color::YELLOW,
+        ..matl.to_owned()
+    })),
+};
+// c989001a ends here
+
 // [[file:../bevy.note::d5c13162][d5c13162]]
 #[derive(Clone, Copy, Debug, Component)]
 pub struct FrameIndex(pub usize);
@@ -407,7 +425,13 @@ pub fn spawn_molecule(
                 let mut atom = Atom::new(a);
                 atom.set_visible(visible);
                 let mut atom_bundle = AtomBundle::new(atom, &mut meshes, &mut materials);
-                commands.spawn(atom_bundle).insert(AtomIndex(i)).insert(frame_name);
+                commands
+                    .spawn(atom_bundle)
+                    .insert(AtomIndex(i))
+                    .insert(frame_name)
+                    .insert(PickableBundle::default())
+                    .insert(RaycastPickTarget::default())
+                    .insert(HIGHLIGHT_TINT);
             }
 
             // add chemical bonds
@@ -418,7 +442,9 @@ pub fn spawn_molecule(
                 let atom2 = Atom::new(aj);
                 let mut bond = Bond::new(atom1, atom2);
                 bond.set_visible(visible);
-                commands.spawn(BondBundle::new(bond, &mut meshes, &mut materials)).insert(frame_name);
+                commands
+                    .spawn(BondBundle::new(bond, &mut meshes, &mut materials))
+                    .insert(frame_name);
             }
 
             // lattice

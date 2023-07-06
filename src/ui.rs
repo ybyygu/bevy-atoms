@@ -308,6 +308,7 @@ mod panel {
         writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
+        selected_atoms: Res<crate::molecule::SelectedAtoms>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -366,6 +367,13 @@ mod panel {
                     }
                     if ui.button("Select none").clicked() {
                         state.message = "no implemented yet".into();
+                    }
+                    if ui.button("selected").clicked() {
+                        if !selected_atoms.0.is_empty() {
+                            if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms.0) {
+                                state.message = format!("selected atoms: {s}");
+                            }
+                        }
                     }
                 });
                 ui.menu_button("Crystal", |ui| {

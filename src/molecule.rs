@@ -4,7 +4,7 @@
 
 use bevy::prelude::*;
 
-use bevy_mod_picking::PickingCameraBundle;
+use bevy_mod_picking::prelude::*;
 // a83ae206 ends here
 
 // [[file:../bevy.note::031857dd][031857dd]]
@@ -88,6 +88,9 @@ pub struct MoleculeTrajectory {
     pub mols: Vec<gchemol::Molecule>,
 }
 
+#[derive(Resource, Clone, Debug, Default)]
+pub struct SelectedAtoms(pub Vec<usize>);
+
 /// Visilization state
 #[derive(Resource, Clone, Debug, Default)]
 pub struct VisilizationState {
@@ -130,6 +133,20 @@ fn traj_animation_player(
 }
 // 20198b2d ends here
 
+// [[file:../bevy.note::31795e08][31795e08]]
+use crate::base::AtomIndex;
+
+pub fn atom_selections(mut selected_atoms: ResMut<SelectedAtoms>, selection_query: Query<(&AtomIndex, &PickSelection)>) {
+    let mut selected = vec![];
+    for (AtomIndex(i), selection) in selection_query.iter() {
+        if selection.is_selected {
+            selected.push(*i);
+        }
+    }
+    selected_atoms.0 = selected;
+}
+// 31795e08 ends here
+
 // [[file:../bevy.note::1c6c0570][1c6c0570]]
 use crate::base::CurrentFrame;
 
@@ -168,7 +185,7 @@ pub fn spawn_molecules(
             ..default()
         })
         .insert(arcball_camera)
-        .insert(PickingCameraBundle::default());
+        .insert(RaycastPickCamera::default());
 
     // create atoms and bonds
     for (fi, mol) in traj.mols.iter().enumerate() {
@@ -261,11 +278,13 @@ impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame::default())
+            .insert_resource(SelectedAtoms::default())
             .insert_resource(VisilizationState::default())
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)
             .add_system(keyboard_animation_control)
             .add_system(drag_and_drop_files)
+            .add_system(atom_selections)
             .add_system(traj_animation_player);
     }
 }
