@@ -14,7 +14,7 @@ use bevy::winit::WinitSettings;
 use bevy::DefaultPlugins;
 use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
-use bevy_mod_picking::prelude::{DebugPickingPlugin, DefaultPickingPlugins};
+use bevy_mod_picking::prelude::DefaultPickingPlugins;
 use bevy_mod_picking::selection::SelectionSettings;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
@@ -79,7 +79,7 @@ impl ViewerCli {
 
         app.add_plugin(EguiPlugin)
             // do not show debug ui
-            .add_plugins(DefaultPickingPlugins.build().disable::<DebugPickingPlugin>())
+            .add_plugins(DefaultPickingPlugins.build())
             .insert_resource(SelectionSettings {
                 click_nothing_deselect_all: false,
                 use_multiselect_default_inputs: true,
