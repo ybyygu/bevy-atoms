@@ -124,6 +124,10 @@ struct Settings {
     extra_basis_set_atoms: Vec<usize>,
     #[serde(skip)]
     _extra_basis_set_atoms: String,
+    // The real string for ORCA. ORCA atom counting starts from 0.
+    oniom_qm_atoms: String,
+    #[serde(skip)]
+    _oniom_qm_atoms: String,
     charge: isize,
     multiplicity: Multiplicity,
     scf_type: Option<SCFType>,
@@ -197,25 +201,12 @@ impl State {
                     show_combo_box_enum!("orca-dft-grid", ui, self.settings.dft_grid, DFTGrid, 200.0);
                 });
         });
-
-        ui.collapsing("Misc", |ui| {
-            egui::Grid::new("orca_grid_misc")
+        ui.collapsing("Multiscale", |ui| {
+            egui::Grid::new("orca_grid_multiscale")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    // symmetry
-                    ui.label("Symmetry");
-                    let radio = &mut self.settings.symmetry;
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(radio, Symmetry::NoUseSym, "NoUseSym");
-                        ui.selectable_value(radio, Symmetry::UseSym, "UseSym");
-                    });
-                    // dispersion
-                    ui.end_row();
-                    ui.label("Dispersion");
-                    show_combo_box_enum!("orca-dispersion", ui, self.settings.dispersion, Dispersion, 200.0);
-                    ui.end_row();
                     // allow user set extra basis set for some atoms
                     ui.hyperlink_to("Extra basis set", "https://sites.google.com/site/orcainputlibrary/basis-sets");
                     show_combo_box_enum!("orca-extra-basis", ui, self.settings.extra_basis_set, BasisSet, 200.0);
@@ -237,14 +228,66 @@ impl State {
                             }
                         }
                     }
-                    // RI
                     ui.end_row();
+                    // ONIOM
+
+                    ui.hyperlink_to(
+                        "ONIOM QM layer atoms",
+                        "https://www.orcasoftware.de/tutorials_orca/multi/basics-otheroniom.html",
+                    )
+                    .on_hover_text("Enable multiscale ONIOM method");
+                    if ui
+                        .add(egui::TextEdit::singleline(&mut self.settings._oniom_qm_atoms).clip_text(false))
+                        .on_hover_text("The serial numbers of atoms in QM layer. For example: 1,5,8-10,12")
+                        .lost_focus()
+                    {
+                        if !self.settings._oniom_qm_atoms.is_empty() {
+                            if let Ok(qm_atoms) = gut::utils::parse_numbers_human_readable(&self.settings._oniom_qm_atoms) {
+                                // ORCA counting atoms starts from 0
+                                let mut qm_atoms_orca = qm_atoms.clone();
+                                for i in 0..qm_atoms_orca.len() {
+                                    qm_atoms_orca[i] -= 1;
+                                }
+                                if let Ok(t) = gut::utils::abbreviate_numbers_human_readable(&qm_atoms) {
+                                    self.settings._oniom_qm_atoms = t;
+                                    let t = gut::utils::abbreviate_numbers_human_readable(&qm_atoms_orca)
+                                        .unwrap()
+                                        .replace(",", " ")
+                                        .replace("-", ":");
+                                    self.settings.oniom_qm_atoms = t;
+                                }
+                            }
+                        }
+                    }
+                });
+        });
+
+        ui.collapsing("Misc", |ui| {
+            egui::Grid::new("orca_grid_misc")
+                .num_columns(2)
+                .spacing([40.0, 4.0])
+                .striped(true)
+                .show(ui, |ui| {
+                    // symmetry
+                    ui.label("Symmetry");
+                    let radio = &mut self.settings.symmetry;
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(radio, Symmetry::NoUseSym, "NoUseSym");
+                        ui.selectable_value(radio, Symmetry::UseSym, "UseSym");
+                    });
+                    // dispersion
+                    ui.end_row();
+                    ui.label("Dispersion");
+                    show_combo_box_enum!("orca-dispersion", ui, self.settings.dispersion, Dispersion, 200.0);
+                    ui.end_row();
+                    // RI
                     ui.label("RI Approximation");
                     show_combo_box_enum!("orca-ri", ui, self.settings.ri, RIApproximation, 200.0);
                     ui.end_row();
                     ui
                         .checkbox(&mut self.settings.write_molecule_geometry, "Write geometry")
                         .on_hover_text("If checked, write molecule geometry using `xyz` keyword. If not, read from a default xyzfile `orca-input.xyz`");
+                    ui.end_row();
                 })
         });
 

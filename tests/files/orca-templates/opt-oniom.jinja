@@ -1,0 +1,50 @@
+# method, basis set, ...
+! QM/QM2 {{method or "B3LYP"}} {{basis_set or "def2-SVP"}} {{scf_type or ""}} def2/J {{ri or ""}}
+%QMMM QM2CUSTOMMETHOD "PBE D3BJ DEF2-SVP"
+ QMATOMS {%raw%}{{%endraw%}{{oniom_qm_atoms}}{%raw%}}{%endraw%} END
+END
+! opt
+# other optional parameters
+! {{symmetry or "NoUseSym"}} {{scf_convergence or ""}} {{dft_grid or ""}} {{dispersion or ""}}
+# resume from previous job
+! AUTOSTART
+
+# for nodes in queue "dft"
+%pal nprocs 36 end
+%maxcore 5000
+
+# for resolving scf convergence problems
+! KDIIS SOSCF
+#! SlowConv
+%scf
+  maxiter 500
+  Shift Shift 0.1 ErrOff 0.1 end
+end
+
+%geom
+# Step size control
+MaxStep 0.3 # maximum step length in internal coordinates. Default is 0.3 au
+# keyword for frequently used sets of convergence thresholds
+Convergence normal # possible values: normal, loose, tight
+# Initial trust radius. Default is -0.3 au.  Trust <0 - use fixed trust radius
+Trust -0.3
+# use GDIIS step (in Cartesian optimization). Default is false.
+UseGDIIS false
+# fix atoms during optimization
+#Constraints
+#{C O C}
+#{C 1 C}
+#{C 2 C}
+#end
+end
+
+# coordinates
+{%- if write_molecule_geometry %}
+* xyz {{charge}} {{multiplicity}}
+{% for a in molecule.atoms -%}
+{{a.symbol | format("<6") }} {{ a.x | format("-18.8")}} {{ a.y | format("-18.8")}} {{ a.z | format("-18.8")}}
+{% endfor -%}
+*
+{% else %}
+* xyzfile {{charge}} {{multiplicity}} orca-input.xyz
+{% endif %}
