@@ -133,7 +133,7 @@ fn traj_animation_player(
 // [[file:../bevy.note::31795e08][31795e08]]
 use crate::base::AtomIndex;
 
-pub fn get_selected_atoms(selection_query: &Query<(&AtomIndex, &PickSelection)>) -> Vec<usize> {
+pub fn get_selected_atoms(selection_query: &Query<(&AtomIndex, &mut PickSelection)>) -> Vec<usize> {
     let mut selected = vec![];
     for (AtomIndex(i), selection) in selection_query.iter() {
         if selection.is_selected {
