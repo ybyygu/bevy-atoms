@@ -263,19 +263,22 @@ impl UiApp {
 // e26673e2 ends here
 
 // [[file:../bevy.note::ed37221a][ed37221a]]
+use bevy_mod_picking::prelude::PickSelection;
+
 impl UiApp {
     fn label_atoms(
         &mut self,
         state: ResMut<UiState>,
         mut label_events: EventWriter<AtomLabelEvent>,
-        selected_atoms: Res<crate::molecule::SelectedAtoms>,
+        selection_query: Query<(&crate::base::AtomIndex, &PickSelection)>,
         atoms_query: Query<(Entity, &crate::base::AtomIndex, &crate::base::Atom)>,
     ) {
         if state.label_atoms_checked {
             info!("create atoms labels ...");
             for (entity, atom_index, atom) in atoms_query.iter() {
                 // only label selected atoms
-                if selected_atoms.0.is_empty() || selected_atoms.0.contains(&atom_index.0) {
+                let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
+                if selected_atoms.is_empty() || selected_atoms.contains(&atom_index.0) {
                     let label = atom.get_label(atom_index.0);
                     if !label.is_empty() {
                         label_events.send(AtomLabelEvent::Create((entity, label)));
@@ -300,6 +303,7 @@ mod panel {
     use bevy::app::AppExit;
     use bevy::prelude::*;
     use bevy_egui::{egui, EguiContexts};
+    use bevy_mod_picking::prelude::PickSelection;
 
     pub fn side_panels(
         mut state: ResMut<UiState>,
@@ -312,7 +316,7 @@ mod panel {
         writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
-        selected_atoms: Res<crate::molecule::SelectedAtoms>,
+        selection_query: Query<(&crate::base::AtomIndex, &PickSelection)>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -373,8 +377,9 @@ mod panel {
                         state.message = "no implemented yet".into();
                     }
                     if ui.button("show selected").clicked() {
-                        if !selected_atoms.0.is_empty() {
-                            if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms.0) {
+                        let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
+                        if !selected_atoms.is_empty() {
+                            if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms) {
                                 state.message = format!("selected atoms: {s}");
                             }
                         }
@@ -463,7 +468,7 @@ mod panel {
             Action::Load => app.load_trajectory(state, writer),
             Action::Save => app.save_trajectory(traj, state),
             Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
-            Action::LabelAtoms => app.label_atoms(state, label_events, selected_atoms, atoms_query),
+            Action::LabelAtoms => app.label_atoms(state, label_events, selection_query, atoms_query),
             _ => {
                 state.message = format!("handler for action {action:?} is not implemented yet");
             }
