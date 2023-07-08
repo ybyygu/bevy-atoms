@@ -389,7 +389,8 @@ use bevy::math::vec4;
 
 const HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
     // do not react on hover
-    hovered: Some(HighlightKind::new_dynamic(|matl| StandardMaterial { ..matl.to_owned() })),
+    hovered: None,
+    // hovered: Some(HighlightKind::new_dynamic(|matl| StandardMaterial { ..matl.to_owned() })),
     pressed: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
         base_color: Color::YELLOW,
         ..matl.to_owned()

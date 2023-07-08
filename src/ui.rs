@@ -378,6 +378,7 @@ mod panel {
                                 state.message = format!("selected atoms: {s}");
                             }
                         }
+                        ui.close_menu();
                     }
                 });
                 ui.menu_button("Crystal", |ui| {
