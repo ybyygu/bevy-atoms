@@ -328,6 +328,7 @@ mod panel {
         mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
         mut selection_query: Query<(&crate::base::AtomIndex, &mut PickSelection)>,
+        selected_atoms: Res<crate::molecule::SelectedAtoms>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -338,6 +339,48 @@ mod panel {
 
         let mut action = Action::None;
         let mut app = UiApp::default();
+
+        // measure distance, angle, torsion for selected atoms
+        match selected_atoms.0.len() {
+            n @ 2..=4 => {
+                let atoms_s: Vec<_> = selected_atoms.0.iter().map(|x| x.to_string()).collect();
+                let atoms = atoms_s.join("-");
+                let current_molecule = &traj.mols[current_frame.index(traj.mols.len()).unwrap_or(0)];
+                let i = selected_atoms.0[0];
+                let j = selected_atoms.0[1];
+                let message = match n {
+                    2 => {
+                        if let Some(v) = current_molecule.get_distance(i, j) {
+                            format!("distance({atoms}) = {v:6.4} Å")
+                        } else {
+                            format!("{atoms}")
+                        }
+                    }
+                    3 => {
+                        let k = selected_atoms.0[2];
+                        if let Some(v) = current_molecule.get_angle(i, j, k) {
+                            let v = v.to_degrees();
+                            format!("angle({atoms}) = {v:6.2} °")
+                        } else {
+                            format!("{atoms}")
+                        }
+                    }
+                    4 => {
+                        let k = selected_atoms.0[2];
+                        let l = selected_atoms.0[3];
+                        if let Some(v) = current_molecule.get_torsion(i, j, k, l) {
+                            let v = v.to_degrees();
+                            format!("torsion({atoms}) = {v:6.2} °")
+                        } else {
+                            format!("{atoms}")
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+                state.message = message;
+            }
+            _ => {}
+        }
 
         egui::TopBottomPanel::top("top_panel").resizable(true).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {

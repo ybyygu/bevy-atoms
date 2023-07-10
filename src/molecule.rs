@@ -133,6 +133,11 @@ fn traj_animation_player(
 // [[file:../bevy.note::31795e08][31795e08]]
 use crate::base::AtomIndex;
 
+// A resource that holds a list of selected atoms in the order that
+// they are being selected.
+#[derive(Default, Resource)]
+pub struct SelectedAtoms(pub Vec<usize>);
+
 pub fn get_selected_atoms(selection_query: &Query<(&AtomIndex, &mut PickSelection)>) -> Vec<usize> {
     let mut selected = vec![];
     for (AtomIndex(i), selection) in selection_query.iter() {
@@ -141,6 +146,28 @@ pub fn get_selected_atoms(selection_query: &Query<(&AtomIndex, &mut PickSelectio
         }
     }
     selected
+}
+
+// A system that updates the selection list based on the Select and Deselect events
+fn update_atom_selection(
+    mut selected_atoms: ResMut<SelectedAtoms>,
+    mut selections: EventReader<Pointer<Select>>,
+    mut deselections: EventReader<Pointer<Deselect>>,
+    atoms_query: Query<&AtomIndex>,
+) {
+    // Iterate over the Select events and push the selected entities to the list
+    for event in selections.iter() {
+        if let Ok(si) = atoms_query.get(event.target) {
+            selected_atoms.0.push(si.0);
+        }
+    }
+
+    // Iterate over the Deselect events and remove the deselected entities from the list
+    for event in deselections.iter() {
+        if let Ok(si) = atoms_query.get(event.target) {
+            selected_atoms.0.retain(|&e| e != si.0);
+        }
+    }
 }
 // 31795e08 ends here
 
@@ -276,11 +303,12 @@ impl Plugin for MoleculePlugin {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame::default())
             .insert_resource(VisilizationState::default())
+            .insert_resource(SelectedAtoms::default())
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)
             .add_system(keyboard_animation_control)
             .add_system(drag_and_drop_files)
-            // .add_system(atom_selections)
+            .add_system(update_atom_selection)
             .add_system(traj_animation_player);
     }
 }
