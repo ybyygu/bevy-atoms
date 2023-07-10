@@ -178,6 +178,7 @@ pub fn spawn_molecules(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut selected_atoms: ResMut<SelectedAtoms>,
     traj: Res<MoleculeTrajectory>,
 ) {
     // light
@@ -217,6 +218,9 @@ pub fn spawn_molecules(
         let visible = fi == 0;
         crate::base::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
     }
+
+    // clear selection
+    selected_atoms.0.clear();
 }
 // 1c6c0570 ends here
 

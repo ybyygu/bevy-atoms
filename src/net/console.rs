@@ -39,6 +39,7 @@ fn load_command(
     molecule_query: Query<Entity, With<crate::base::Molecule>>,
     mut arcball_camera: Query<&mut PanOrbitCamera>,
     mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
+    mut selected_atoms: ResMut<crate::molecule::SelectedAtoms>,
 ) {
     for (_per_frame, StreamEvent(cmd)) in reader.iter().enumerate() {
         match cmd {
@@ -68,6 +69,8 @@ fn load_command(
                 } else {
                     warn!("Received empty molecule list.");
                 }
+                // clear selection on loading
+                selected_atoms.0.clear();
                 break;
             }
             _ => {
