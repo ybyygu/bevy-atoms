@@ -323,7 +323,7 @@ mod panel {
         molecule_query: Query<Entity, With<crate::base::Molecule>>,
         label_events: EventWriter<AtomLabelEvent>,
         atoms_query: Query<(Entity, &AtomIndex, &crate::base::Atom)>,
-        traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
         writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
@@ -426,11 +426,22 @@ mod panel {
                         }
                         ui.close_menu();
                     }
-                    if ui.button("Select all").clicked() {
-                        state.message = "no implemented yet".into();
-                    }
-                    if ui.button("Select none").clicked() {
-                        state.message = "no implemented yet".into();
+                    if ui.button("Freeze selected atoms").clicked() {
+                        let nframes = traj.mols.len();
+                        if let Some(iframe) = current_frame.index(nframes) {
+                            let mol = &mut traj.mols[iframe];
+                            let n = mol.natoms();
+                            state.message = format!("Freezed {n} atoms");
+                            let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
+                            if !selected_atoms.is_empty() {
+                                for i in selected_atoms {
+                                    if let Some(a) = mol.get_atom_mut(i) {
+                                        a.set_freezing([true; 3]);
+                                    }
+                                }
+                                ui.close_menu();
+                            }
+                        }
                     }
                 });
                 ui.menu_button("Crystal", |ui| {
