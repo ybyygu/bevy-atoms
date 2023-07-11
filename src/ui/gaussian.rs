@@ -148,7 +148,7 @@ impl Default for State {
 // [[file:../../bevy.note::adbd1801][adbd1801]]
 impl State {
     /// Show UI for Gaussian input generator
-    pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
+    pub fn show(&mut self, ui: &mut Ui, mol: Option<&Molecule>) {
         egui::Grid::new("gaussian_grid_core").num_columns(2).show(ui, |ui| {
             // method
             ui.hyperlink_to("Method", "https://gaussian.com/dft");

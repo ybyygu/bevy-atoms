@@ -85,20 +85,45 @@ fn setup_lights(commands: &mut Commands) {
 // [[file:../bevy.note::c068ff9c][c068ff9c]]
 #[derive(Resource, Clone, Debug, Default)]
 pub struct MoleculeTrajectory {
-    pub mols: Vec<gchemol::Molecule>,
-}
-
-/// Visilization state
-#[derive(Resource, Clone, Debug, Default)]
-pub struct VisilizationState {
-    pub display_label: bool,
+    mols: Vec<gchemol::Molecule>,
 }
 
 impl MoleculeTrajectory {
+    pub fn new(mols: Vec<gchemol::Molecule>) -> Self {
+        Self { mols }
+    }
+
     pub fn save_as(&self, path: &std::path::Path) {
         if let Err(err) = gchemol::io::write(path, &self.mols) {
             error!("Write molecules error: {err:?}");
         }
+    }
+
+    /// Return the number of molecule frames
+    pub fn nframes(&self) -> usize {
+        self.mols.len()
+    }
+
+    pub fn get_molecules(&self) -> &[Molecule] {
+        self.mols.as_slice()
+    }
+
+    /// Get current molecule index of `current_frame`
+    pub fn get_current_frame_index(&self, current_frame: &crate::base::CurrentFrame) -> Option<usize> {
+        let nframes = self.mols.len();
+        current_frame.index(nframes)
+    }
+
+    /// Read only access to current molecule.
+    pub fn get_current_molecule(&self, current_frame: &crate::base::CurrentFrame) -> Option<&gchemol::Molecule> {
+        let index = self.get_current_frame_index(current_frame)?;
+        self.mols.get(index)
+    }
+
+    /// Mutable access to current molecule.
+    pub fn get_current_molecule_mut(&mut self, current_frame: &crate::base::CurrentFrame) -> Option<&mut gchemol::Molecule> {
+        let index = self.get_current_frame_index(current_frame)?;
+        self.mols.get_mut(index)
     }
 }
 // c068ff9c ends here
@@ -117,8 +142,7 @@ fn traj_animation_player(
     current_frame: Res<CurrentFrame>,
     mut visibility_query: Query<(&mut Visibility, &FrameIndex)>,
 ) {
-    let nframes = traj.mols.len();
-    if let Some(ci) = current_frame.index(nframes) {
+    if let Some(ci) = traj.get_current_frame_index(&current_frame) {
         for (mut visibility, FrameIndex(fi)) in visibility_query.iter_mut() {
             if *fi == ci as usize {
                 *visibility = Visibility::Visible;
@@ -306,7 +330,6 @@ impl Plugin for MoleculePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame::default())
-            .insert_resource(VisilizationState::default())
             .insert_resource(SelectedAtoms::default())
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)

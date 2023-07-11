@@ -76,7 +76,7 @@ impl State {
 
 // [[file:../../bevy.note::a6fccc52][a6fccc52]]
 impl State {
-    fn show_central_panel(&mut self, ui: &mut Ui, mol: Option<gchemol::Molecule>) {
+    fn show_central_panel(&mut self, ui: &mut Ui, mol: Option<&gchemol::Molecule>) {
         ui.heading(format!("{:?} input generator", self.code));
         ui.separator();
 
@@ -104,7 +104,7 @@ impl State {
 // [[file:../../bevy.note::39717a88][39717a88]]
 impl State {
     /// Show UI for all orca settings
-    pub fn show(&mut self, ctx: &egui::Context, mol: Option<gchemol::Molecule>) {
+    pub fn show(&mut self, ctx: &egui::Context, mol: Option<&gchemol::Molecule>) {
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             self.show_side_panel(ui);
         });

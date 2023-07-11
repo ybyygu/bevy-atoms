@@ -160,7 +160,7 @@ impl Default for State {
 // [[file:../../bevy.note::bc270427][bc270427]]
 impl State {
     /// Show egui UI
-    pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
+    pub fn show(&mut self, ui: &mut Ui, mol: Option<&Molecule>) {
         egui::Grid::new("orca_grid_core").num_columns(2).show(ui, |ui| {
             // method
             ui.hyperlink_to("Method", "https://sites.google.com/site/orcainputlibrary/dft-calculations");
@@ -232,7 +232,7 @@ impl State {
                     // ONIOM
 
                     ui.hyperlink_to(
-                        "ONIOM QM layer atoms",
+                        "ONIOM QM layer atom",
                         "https://www.orcasoftware.de/tutorials_orca/multi/basics-otheroniom.html",
                     )
                     .on_hover_text("Enable multiscale ONIOM method");

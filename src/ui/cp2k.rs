@@ -138,7 +138,7 @@ impl Default for State {
 // [[file:../../bevy.note::12fe2b66][12fe2b66]]
 impl State {
     /// Show UI for Gaussian input generator
-    pub fn show(&mut self, ui: &mut Ui, mol: Option<Molecule>) {
+    pub fn show(&mut self, ui: &mut Ui, mol: Option<&Molecule>) {
         egui::Grid::new("cp2k_grid_core").num_columns(2).show(ui, |ui| {
             // method
             ui.hyperlink_to("Method", "https://manual.cp2k.org/trunk/new/CP2K_INPUT/FORCE_EVAL/DFT.html");

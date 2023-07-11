@@ -65,7 +65,7 @@ fn load_command(
                         pan_orbit.focus = center.into();
                     }
                     // also update trajecotry resource
-                    *traj = crate::molecule::MoleculeTrajectory { mols: mols.to_vec() };
+                    *traj = crate::molecule::MoleculeTrajectory::new(mols.to_vec());
                 } else {
                     warn!("Received empty molecule list.");
                 }

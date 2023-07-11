@@ -345,7 +345,7 @@ mod panel {
             n @ 2..=4 => {
                 let atoms_s: Vec<_> = selected_atoms.0.iter().map(|x| x.to_string()).collect();
                 let atoms = atoms_s.join("-");
-                let current_molecule = &traj.mols[current_frame.index(traj.mols.len()).unwrap_or(0)];
+                let current_molecule = traj.get_current_molecule(&current_frame).expect("no active mol");
                 let i = selected_atoms.0[0];
                 let j = selected_atoms.0[1];
                 let message = match n {
@@ -427,11 +427,7 @@ mod panel {
                         ui.close_menu();
                     }
                     if ui.button("Freeze selected atoms").clicked() {
-                        let nframes = traj.mols.len();
-                        if let Some(iframe) = current_frame.index(nframes) {
-                            let mol = &mut traj.mols[iframe];
-                            let n = mol.natoms();
-                            state.message = format!("Freezed {n} atoms");
+                        if let Some(mol) = traj.get_current_molecule_mut(&current_frame) {
                             let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
                             if !selected_atoms.is_empty() {
                                 for i in selected_atoms {
@@ -495,8 +491,7 @@ mod panel {
                 action = Action::LabelAtoms;
             }
             // show animation control button
-            let nframes = traj.mols.len();
-            if let Some(iframe) = current_frame.index(nframes) {
+            if let Some(iframe) = traj.get_current_frame_index(&current_frame) {
                 ui.horizontal(|ui| {
                     if ui.button("Backward").clicked() {
                         current_frame.prev();
@@ -510,8 +505,8 @@ mod panel {
             }
 
             // show ui for molecule control
-            if !traj.mols.is_empty() {
-                super::molecule_traj::show(ui, &traj.mols, &mut current_frame);
+            if traj.nframes() != 0 {
+                super::molecule_traj::show(ui, &traj.get_molecules(), &mut current_frame);
             }
 
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
@@ -876,14 +871,14 @@ mod input {
         mut state: ResMut<super::compute::State>,
         mut egui_ctx: Query<&mut EguiContext, Without<PrimaryWindow>>,
         traj: ResMut<crate::molecule::MoleculeTrajectory>,
+        current_frame: Res<crate::base::CurrentFrame>,
     ) {
         let Ok(mut ctx) = egui_ctx.get_single_mut() else { return; };
         let ctx = ctx.get_mut();
         // Switch to light mode
         ctx.set_visuals(egui::Visuals::light());
         // `Molecule` is required for input file generator
-        // FIXME: select which molecule to render?
-        let mol = traj.mols.iter().last().cloned();
+        let mol = traj.get_current_molecule(&current_frame);
         state.show(ctx, mol);
     }
 }
