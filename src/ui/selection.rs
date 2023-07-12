@@ -39,7 +39,7 @@ impl Default for State {
 /// Show menu when user right click selection input area
 fn show_context_menu(ui: &mut Ui, state: &mut State, selection_query: &Query<(&crate::base::AtomIndex, &mut PickSelection)>) {
     if ui
-        .button("Read")
+        .button("Read from view")
         .on_hover_text("Read selection from active molecule view")
         .clicked()
     {
@@ -51,16 +51,24 @@ fn show_context_menu(ui: &mut Ui, state: &mut State, selection_query: &Query<(&c
         }
     }
     // copy selection to clipboard
-    if ui.button("Copy").on_hover_text("copy selection").clicked() {
+    if ui.button("Copy to clipboard").on_hover_text("copy selection").clicked() {
         ui.output_mut(|o| o.copied_text = state.selection.clone());
     }
     ui.horizontal(|ui| {
-        if ui.button("Save").on_hover_text("save selection for later uses").clicked() {
-            state
-                .named_selections
-                .insert(state.selection_name.clone(), state.selection.clone());
+        let button = ui.button("Save").on_hover_text("save selection for later uses");
+        if ui
+            .add(egui::TextEdit::singleline(&mut state.selection_name))
+            .on_hover_text("the name for selection")
+            .lost_focus()
+            && ui.input(|i| i.key_pressed(egui::Key::Enter))
+            || button.clicked()
+        {
+            if !state.selection.is_empty() {
+                state
+                    .named_selections
+                    .insert(state.selection_name.clone(), state.selection.clone());
+            }
         }
-        ui.add(egui::TextEdit::singleline(&mut state.selection_name));
     });
 
     if !state.named_selections.is_empty() {
@@ -88,26 +96,33 @@ fn show_context_menu(ui: &mut Ui, state: &mut State, selection_query: &Query<(&c
 impl State {
     /// Show ui for atom selection
     pub fn show(&mut self, ui: &mut Ui, selection_query: &mut Query<(&crate::base::AtomIndex, &mut PickSelection)>) {
-        ui.label("Atom selection");
-        ui.horizontal(|ui| {
-            let button = ui
-                .button("select ")
-                .on_hover_text("select atoms in active molecule using user input");
-            ui.add(egui::TextEdit::singleline(&mut self.selection).clip_text(false))
-                .context_menu(|ui| show_context_menu(ui, self, &selection_query))
-                .on_hover_text("Select atoms using a human readable string. For example: 1,5,8-10,12");
-            if button.clicked() {
-                if let Ok(selected_atoms) = gut::utils::parse_numbers_human_readable(&self.selection) {
-                    for (ai, mut selection) in selection_query.iter_mut() {
-                        let selected = selected_atoms.contains(&ai.0);
-                        selection.is_selected = selected;
-                    }
-                    // update selection with normalized text
-                    if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms) {
-                        self.selection = s;
+        egui::Frame::window(ui.style()).show(ui, |ui| {
+            ui.label("Atom selection");
+            ui.horizontal(|ui| {
+                let button = ui
+                    .button("select ")
+                    .on_hover_text("select atoms in active molecule using user input");
+
+                if ui
+                    .add(egui::TextEdit::singleline(&mut self.selection).clip_text(false))
+                    .context_menu(|ui| show_context_menu(ui, self, &selection_query))
+                    .on_hover_text("Select atoms using a human readable string. For example: 1,5,8-10,12")
+                    .lost_focus()
+                    && ui.input(|i| i.key_pressed(egui::Key::Enter))
+                    || button.clicked()
+                {
+                    if let Ok(selected_atoms) = gut::utils::parse_numbers_human_readable(&self.selection) {
+                        for (ai, mut selection) in selection_query.iter_mut() {
+                            let selected = selected_atoms.contains(&ai.0);
+                            selection.is_selected = selected;
+                        }
+                        // update selection with normalized text
+                        if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms) {
+                            self.selection = s;
+                        }
                     }
                 }
-            }
+            });
         });
     }
 }
