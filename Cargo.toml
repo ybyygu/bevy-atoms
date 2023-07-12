@@ -56,7 +56,7 @@ bevy_mod_picking = { version = "0.14.0", default-features = false, features = [
   "selection",
 ] }
 
-bevy_egui = "0.20"
+bevy_egui = "0.20.3"
 # wasm build panic issue: https://bevy-cheatbook.github.io/platforms/wasm/panic-console.html
 console_error_panic_hook = "0.1"
 # bevy_console = "0.7.0"                                                 # command line UI

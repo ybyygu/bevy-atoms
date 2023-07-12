@@ -34,6 +34,7 @@ mod compute;
 mod cp2k;
 mod gaussian;
 mod orca;
+mod selection;
 mod template;
 mod vasp;
 // 8d1285a1 ends here
@@ -67,8 +68,9 @@ impl AtomLabel {
 pub struct UiState {
     label_atoms_checked: bool,
     message: String,
-    atom_selection_input: String,
     periodic_table_window_open: bool,
+    // atom selection
+    atom_selection: selection::State,
     atom_selection_window_open: bool,
 }
 
@@ -83,9 +85,9 @@ impl Default for UiState {
         Self {
             label_atoms_checked: false,
             message: "Tip: You can press `q` to exit.".to_owned(),
-            atom_selection_input: String::new(),
             periodic_table_window_open: false,
             atom_selection_window_open: false,
+            atom_selection: selection::State::default(),
         }
     }
 }
@@ -105,6 +107,8 @@ enum Action {
     Clear,
     /// Create label for each atom
     LabelAtoms,
+    /// Select atoms
+    AtomSelection,
     /// Remove lattice
     UnbuildCrystal,
 }
@@ -406,26 +410,6 @@ mod panel {
                         action = Action::Clear;
                         ui.close_menu();
                     }
-                });
-                ui.menu_button("View", |ui| {
-                    // Put molecule in the center of view
-                    if ui.button("recenter").clicked() {
-                        state.message = "no implemented yet".into();
-                    }
-                });
-                ui.menu_button("Select", |ui| {
-                    // select atoms from user input like in GaussView
-                    if ui.button("Select…").clicked() {
-                        state.atom_selection_window_open = true;
-                        let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
-                        if !selected_atoms.is_empty() {
-                            if let Ok(s) = gut::utils::abbreviate_numbers_human_readable(&selected_atoms) {
-                                state.message = format!("selected atoms: {s}");
-                                selection_state.selection = s;
-                            }
-                        }
-                        ui.close_menu();
-                    }
                     if ui.button("Freeze selected atoms").clicked() {
                         if let Some(mol) = traj.get_current_molecule_mut(&current_frame) {
                             let selected_atoms = crate::molecule::get_selected_atoms(&selection_query);
@@ -438,6 +422,12 @@ mod panel {
                                 ui.close_menu();
                             }
                         }
+                    }
+                });
+                ui.menu_button("View", |ui| {
+                    // Put molecule in the center of view
+                    if ui.button("recenter").clicked() {
+                        state.message = "no implemented yet".into();
                     }
                 });
                 ui.menu_button("Crystal", |ui| {
@@ -490,6 +480,8 @@ mod panel {
             if ui.checkbox(&mut state.label_atoms_checked, "Label atoms").clicked() {
                 action = Action::LabelAtoms;
             }
+            // atom selection
+            state.atom_selection.show(ui, &mut selection_query);
             // show animation control button
             if let Some(iframe) = traj.get_current_frame_index(&current_frame) {
                 ui.horizontal(|ui| {
@@ -527,16 +519,19 @@ mod panel {
             .show(ctx, super::periodic_table::show);
 
         // ui for atom selection
-        egui::Window::new("Atom Selection")
-            .id(egui::Id::new("atom_selection"))
-            // will be activated by menu item: Select/select
-            .open(&mut state.atom_selection_window_open)
-            .anchor(egui::Align2::CENTER_TOP, [0.0, 0.0])
-            .collapsible(false)
-            .default_width(500.0)
-            .show(ctx, |ui| {
-                super::selection::show(ui, &mut selection_state.selection, &mut selection_query);
-            });
+        // egui::Window::new("Atom Selection")
+        //     .id(egui::Id::new("atom_selection"))
+        //     // will be activated by menu item: Select/select
+        //     .open(&mut state.atom_selection_window_open)
+        //     .anchor(egui::Align2::CENTER_TOP, [0.0, 0.0])
+        //     .collapsible(false)
+        //     .default_width(500.0)
+        //     .show(ctx, |ui| {
+        //         state
+        //             .atom_selection
+        //             .show(ui, &mut selection_state.selection, &mut selection_query);
+        //         // super::selection::show(ui, &mut selection_state.selection, &mut selection_query);
+        //     });
 
         match action {
             Action::None => {}
@@ -544,6 +539,7 @@ mod panel {
             Action::Save => app.save_trajectory(traj, state),
             Action::Clear => app.clear_molecules(commands, state, label_events, molecule_query),
             Action::LabelAtoms => app.label_atoms(state, label_events, selection_query, atoms_query),
+            // Action::AtomSelection => state.atom_selection.show(ctx),
             _ => {
                 state.message = format!("handler for action {action:?} is not implemented yet");
             }
@@ -571,31 +567,6 @@ mod molecule_traj {
     }
 }
 // a06e5732 ends here
-
-// [[file:../bevy.note::4d10b57c][4d10b57c]]
-mod selection {
-    use bevy::ecs::system::Query;
-    use bevy_egui::egui;
-    use bevy_mod_picking::prelude::PickSelection;
-    use egui::Ui;
-
-    pub fn show(ui: &mut Ui, selection: &mut String, selection_query: &mut Query<(&crate::base::AtomIndex, &mut PickSelection)>) {
-        ui.label("Select atoms:");
-        if ui
-            .add(egui::TextEdit::singleline(selection).clip_text(false))
-            .on_hover_text("Select atoms using a human readable string. For example: 1,5,8-10,12")
-            .lost_focus()
-        {
-            if let Ok(selected_atoms) = gut::utils::parse_numbers_human_readable(selection) {
-                for (ai, mut selection) in selection_query.iter_mut() {
-                    let selected = selected_atoms.contains(&ai.0);
-                    selection.is_selected = selected;
-                }
-            }
-        }
-    }
-}
-// 4d10b57c ends here
 
 // [[file:../bevy.note::c153256c][c153256c]]
 mod periodic_table {
