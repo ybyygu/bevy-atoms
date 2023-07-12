@@ -71,13 +71,6 @@ pub struct UiState {
     periodic_table_window_open: bool,
     // atom selection
     atom_selection: selection::State,
-    atom_selection_window_open: bool,
-}
-
-// for user selection window
-#[derive(Debug, Resource, Default)]
-pub struct UiSelectionState {
-    selection: String,
 }
 
 impl Default for UiState {
@@ -86,7 +79,6 @@ impl Default for UiState {
             label_atoms_checked: false,
             message: "Tip: You can press `q` to exit.".to_owned(),
             periodic_table_window_open: false,
-            atom_selection_window_open: false,
             atom_selection: selection::State::default(),
         }
     }
@@ -107,8 +99,6 @@ enum Action {
     Clear,
     /// Create label for each atom
     LabelAtoms,
-    /// Select atoms
-    AtomSelection,
     /// Remove lattice
     UnbuildCrystal,
 }
@@ -309,7 +299,7 @@ impl UiApp {
 
 // [[file:../bevy.note::bccb8119][bccb8119]]
 mod panel {
-    use super::{Action, UiApp, UiSelectionState, UiState};
+    use super::{Action, UiApp, UiState};
 
     use crate::base::AtomIndex;
     use crate::ui::AtomLabelEvent;
@@ -321,7 +311,6 @@ mod panel {
 
     pub fn side_panels(
         mut state: ResMut<UiState>,
-        mut selection_state: ResMut<UiSelectionState>,
         mut contexts: EguiContexts,
         mut commands: Commands,
         molecule_query: Query<Entity, With<crate::base::Molecule>>,
@@ -517,21 +506,6 @@ mod panel {
             .collapsible(false)
             .default_width(500.0)
             .show(ctx, super::periodic_table::show);
-
-        // ui for atom selection
-        // egui::Window::new("Atom Selection")
-        //     .id(egui::Id::new("atom_selection"))
-        //     // will be activated by menu item: Select/select
-        //     .open(&mut state.atom_selection_window_open)
-        //     .anchor(egui::Align2::CENTER_TOP, [0.0, 0.0])
-        //     .collapsible(false)
-        //     .default_width(500.0)
-        //     .show(ctx, |ui| {
-        //         state
-        //             .atom_selection
-        //             .show(ui, &mut selection_state.selection, &mut selection_query);
-        //         // super::selection::show(ui, &mut selection_state.selection, &mut selection_query);
-        //     });
 
         match action {
             Action::None => {}
@@ -865,7 +839,6 @@ impl Plugin for LabelPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<AtomLabelEvent>()
             .init_resource::<UiState>()
-            .init_resource::<UiSelectionState>()
             .init_resource::<compute::State>()
             .add_system(panel::side_panels)
             .add_system(input::input_generator_window_system)
