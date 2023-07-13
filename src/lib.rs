@@ -5,6 +5,7 @@
 
 // [[file:../bevy.note::3edfd207][3edfd207]]
 mod animation;
+mod arcball;
 mod base;
 mod net;
 mod ui;

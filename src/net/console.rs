@@ -29,7 +29,7 @@ fn delete_command(
 // 22cddf8a ends here
 
 // [[file:../../bevy.note::09fa2046][09fa2046]]
-use bevy_panorbit_camera::PanOrbitCamera;
+use crate::arcball::PanOrbitCamera;
 
 fn load_command(
     mut commands: Commands,

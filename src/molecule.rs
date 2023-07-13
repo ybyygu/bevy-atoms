@@ -12,7 +12,7 @@ use crate::base::FrameIndex;
 // 031857dd ends here
 
 // [[file:../bevy.note::711fbcb5][711fbcb5]]
-use bevy_panorbit_camera::PanOrbitCamera;
+use crate::arcball::PanOrbitCamera;
 
 fn update_light_with_camera(
     mut param_set: ParamSet<(

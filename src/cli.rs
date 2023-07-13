@@ -16,7 +16,7 @@ use bevy_egui::EguiPlugin;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_mod_picking::prelude::DefaultPickingPlugins;
 use bevy_mod_picking::selection::SelectionSettings;
-use bevy_panorbit_camera::PanOrbitCameraPlugin;
+use crate::arcball::PanOrbitCameraPlugin;
 
 use bevy::app::AppExit;
 fn exit_on_q(keyboard_input: Res<Input<KeyCode>>, mut app_exit_events: ResMut<Events<AppExit>>) {
