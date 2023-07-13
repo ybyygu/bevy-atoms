@@ -237,7 +237,7 @@ impl UiApp {
     }
 
     fn save_trajectory(&mut self, traj: ResMut<crate::molecule::MoleculeTrajectory>, mut state: ResMut<UiState>) {
-        if let Some(path) = rfd::FileDialog::new().pick_file() {
+        if let Some(path) = rfd::FileDialog::new().save_file() {
             traj.save_as(path.as_ref());
             state.message = format!("Molecules saved to {path:?}");
         }
