@@ -102,7 +102,7 @@ embed-resource = "1.4"
 [workspace]
 
 [patch.crates-io]
-sbfiles = { path = "/home/ybyygu/Workspace/Programming/cmdline-tools/sbfiles" }
+# sbfiles = { path = "/home/ybyygu/Workspace/Programming/cmdline-tools/sbfiles" }
 # gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol" }
 # gchemol-readwrite = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-readwrite"}
 # e345323a ends here
