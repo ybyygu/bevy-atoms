@@ -254,7 +254,7 @@ use gchemol::Molecule;
 use std::path::Path;
 
 /// update molecule title and bonds for better view
-fn update_mol_from_path(mol: &mut Molecule, f: &Path) {
+pub(crate) fn update_mol_from_path(mol: &mut Molecule, f: &Path) {
     // take file name and its parent directory as the molecule title
     let mut s: Vec<_> = f.iter().rev().take(2).filter_map(|x| x.to_str()).collect();
     if !s.is_empty() {

@@ -1,7 +1,7 @@
 # [[file:bevy.note::e345323a][e345323a]]
 [package]
 name = "gchemol-view"
-version = "0.2.19"
+version = "0.2.20"
 publish = false
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 edition = "2021"
@@ -94,6 +94,7 @@ bevy-inspector-egui = { version = "0.18.3", default-features = false }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { version = "4", features = ["derive"] }
 gchemol = { version = "0.1.7", features = ["adhoc"] }
+sbfiles = "0.1"
 
 [build-dependencies]
 embed-resource = "1.4"
@@ -101,6 +102,7 @@ embed-resource = "1.4"
 [workspace]
 
 [patch.crates-io]
+sbfiles = { path = "/home/ybyygu/Workspace/Programming/cmdline-tools/sbfiles" }
 # gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol" }
 # gchemol-readwrite = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol-readwrite"}
 # e345323a ends here

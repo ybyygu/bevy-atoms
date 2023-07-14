@@ -199,6 +199,36 @@ fn handle_atom_label_events(
 }
 // f1cac934 ends here
 
+// [[file:../bevy.note::c2c885a8][c2c885a8]]
+mod mols_from_clipbaord {
+    use gchemol::prelude::*;
+    use gchemol::Molecule;
+    use gut::prelude::*;
+    use sbfiles::Sbfiles;
+    use std::io::Read;
+
+    /// Read molecules from clipbaord encoded by sbfiles
+    pub fn read(txt: &str) -> Result<Vec<Molecule>> {
+        let mut mols = vec![];
+
+        let mut sbfiles = Sbfiles::new();
+        let mut tar = sbfiles.decode_as_tar(txt)?;
+        for entry in tar.entries()? {
+            let mut entry = entry?;
+            let path = entry.path()?.to_path_buf();
+            if let Some(fmt) = gchemol::io::guess_format_from_path(&path) {
+                let mut mol_str = String::new();
+                entry.read_to_string(&mut mol_str);
+                let mut mol = Molecule::from_str(&mol_str, fmt)?;
+                crate::molecule::update_mol_from_path(&mut mol, &path);
+                mols.push(mol);
+            }
+        }
+        Ok(mols)
+    }
+}
+// c2c885a8 ends here
+
 // [[file:../bevy.note::3fa34d4c][3fa34d4c]]
 impl UiApp {
     fn load_trajectory(&mut self, mut state: ResMut<UiState>, mut writer: EventWriter<crate::net::StreamEvent>) {
@@ -317,11 +347,12 @@ mod panel {
         label_events: EventWriter<AtomLabelEvent>,
         atoms_query: Query<(Entity, &AtomIndex, &crate::base::Atom)>,
         mut traj: ResMut<crate::molecule::MoleculeTrajectory>,
-        writer: EventWriter<crate::net::StreamEvent>,
+        mut writer: EventWriter<crate::net::StreamEvent>,
         mut current_frame: ResMut<crate::base::CurrentFrame>,
         mut app_exit_events: ResMut<Events<AppExit>>,
         mut selection_query: Query<(&crate::base::AtomIndex, &mut PickSelection)>,
         selected_atoms: Res<crate::molecule::SelectedAtoms>,
+        clipboard: Res<bevy_egui::EguiClipboard>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -386,13 +417,37 @@ mod panel {
                         action = Action::Save;
                         ui.close_menu();
                     }
+                    // load molecules based on sbfiles
+                    if ui
+                        .button("🗁 Load from clipboard")
+                        .on_hover_text("Load molecules from clipboard encoded by sbfiles")
+                        .clicked()
+                    {
+                        use gchemol::prelude::*;
+                        use gchemol::Molecule;
+                        use std::io::Read;
+
+                        if let Some(txt) = clipboard.get_contents() {
+                            if let Ok(mols) = super::mols_from_clipbaord::read(&txt) {
+                                let n = mols.len();
+                                let command = crate::net::RemoteCommand::Load(mols);
+                                writer.send(crate::net::StreamEvent(command));
+                                state.message = format!("{n} Molecules loaded from clipbaord.");
+                            }
+                            ui.close_menu();
+                        } else {
+                            error!("no text source from clipbaord");
+                        }
+                    }
                     if ui.button("✖ Quit").clicked() {
                         app_exit_events.send(AppExit);
                     }
                 });
                 ui.menu_button("Edit", |ui| {
                     if ui.button("rebond").clicked() {
-                        // …
+                        if let Some(mol) = traj.get_current_molecule_mut(&current_frame) {
+                            state.message = "no implemented yet".into();
+                        }
                     }
                     // Remove all molecules
                     if ui.button("Clear Molecule").clicked() {
