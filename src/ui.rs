@@ -275,6 +275,29 @@ impl UiApp {
 }
 // 3fa34d4c ends here
 
+// [[file:../bevy.note::42d3bb84][42d3bb84]]
+use crate::arcball::PanOrbitCamera;
+
+fn center_molecule(
+    mut arcball_camera: Query<&mut PanOrbitCamera>,
+    traj: &crate::molecule::MoleculeTrajectory,
+    current_frame: &crate::base::CurrentFrame,
+    selected_atoms: &[usize],
+) {
+    if let Ok(mut pan_orbit) = arcball_camera.get_single_mut() {
+        if let Some(mol) = traj.get_current_molecule(&current_frame) {
+            let mut mol = mol.clone();
+            let mol = match selected_atoms.len() {
+                0 => mol,
+                _ => mol.get_sub_molecule(selected_atoms).unwrap_or(mol),
+            };
+            let center = mol.center_of_geometry().map(|x| x as f32);
+            pan_orbit.focus = center.into();
+        }
+    }
+}
+// 42d3bb84 ends here
+
 // [[file:../bevy.note::e26673e2][e26673e2]]
 impl UiApp {
     fn clear_molecules(
@@ -334,6 +357,7 @@ mod panel {
     use crate::base::AtomIndex;
     use crate::ui::AtomLabelEvent;
 
+    use crate::arcball::PanOrbitCamera;
     use bevy::app::AppExit;
     use bevy::prelude::*;
     use bevy_egui::{egui, EguiContexts};
@@ -353,6 +377,7 @@ mod panel {
         mut selection_query: Query<(&crate::base::AtomIndex, &mut PickSelection)>,
         selected_atoms: Res<crate::molecule::SelectedAtoms>,
         mut clipboard: ResMut<bevy_egui::EguiClipboard>,
+        mut arcball_camera: Query<&mut PanOrbitCamera>,
     ) {
         let ctx = contexts.ctx_mut();
 
@@ -465,9 +490,13 @@ mod panel {
                     }
                 });
                 ui.menu_button("View", |ui| {
-                    // Put molecule in the center of view
-                    if ui.button("recenter").clicked() {
-                        state.message = "no implemented yet".into();
+                    if ui
+                        .button("Center")
+                        .on_hover_text("Set the center of camera with selected atoms")
+                        .clicked()
+                    {
+                        super::center_molecule(arcball_camera, &traj, &current_frame, &selected_atoms.0);
+                        ui.close_menu();
                     }
                 });
                 ui.menu_button("Crystal", |ui| {

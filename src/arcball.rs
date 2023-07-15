@@ -1,3 +1,8 @@
+// [[file:../bevy.note::0398b660][0398b660]]
+//! Imported from https://github.com/Plonq/bevy_panorbit_camera
+//! https://github.com/Plonq/bevy_panorbit_camera/issues/28
+// 0398b660 ends here
+
 // [[file:../bevy.note::*egui][egui:1]]
 mod egui {
     use bevy::prelude::{DetectChangesMut, Query, ResMut, Resource};
