@@ -414,11 +414,11 @@ pub fn spawn_molecule(
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
-    // let frame_name = Name::new(format!("frame-{frame_index}"));
     let frame_name = FrameIndex(frame_index);
     commands
         .spawn(SpatialBundle::default())
         .insert(Molecule)
+        // .insert(crate::animation::Frame(frame_index))
         // for animation control
         .with_children(|commands| {
             // spawn atoms

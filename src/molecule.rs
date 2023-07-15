@@ -195,59 +195,6 @@ fn update_atom_selection(
 }
 // 31795e08 ends here
 
-// [[file:../bevy.note::1c6c0570][1c6c0570]]
-use crate::base::CurrentFrame;
-
-pub fn spawn_molecules(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut selected_atoms: ResMut<SelectedAtoms>,
-    traj: Res<MoleculeTrajectory>,
-) {
-    // light
-    // ambient light
-    setup_lights(&mut commands);
-
-    let center = traj
-        .mols
-        .iter()
-        .next()
-        .map(|mol| mol.center_of_geometry())
-        .unwrap_or_default()
-        .map(|x| x as f32);
-    let arcball_camera = PanOrbitCamera {
-        focus: center.into(),
-        allow_upside_down: true,
-        enabled: true,
-        ..default()
-    };
-
-    // mouse: zoom, rotate and translate
-    commands
-        .spawn(Camera3dBundle {
-            // projection: Projection::Orthographic(OrthographicProjection {
-            //     near: -500.0,
-            //     far: 500.0,
-            //     ..default()
-            // }),
-            ..default()
-        })
-        .insert(arcball_camera)
-        .insert(RaycastPickCamera::default());
-
-    // create atoms and bonds
-    for (fi, mol) in traj.mols.iter().enumerate() {
-        // only show the first frame
-        let visible = fi == 0;
-        crate::base::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
-    }
-
-    // clear selection
-    selected_atoms.0.clear();
-}
-// 1c6c0570 ends here
-
 // [[file:../bevy.note::92f358a8][92f358a8]]
 use bevy::window::PrimaryWindow;
 use gchemol::Molecule;
@@ -311,6 +258,59 @@ fn drag_and_drop_files(
 }
 // 92f358a8 ends here
 
+// [[file:../bevy.note::1c6c0570][1c6c0570]]
+use crate::base::CurrentFrame;
+
+pub fn spawn_molecules(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut selected_atoms: ResMut<SelectedAtoms>,
+    traj: Res<MoleculeTrajectory>,
+) {
+    // light
+    // ambient light
+    setup_lights(&mut commands);
+
+    let center = traj
+        .mols
+        .iter()
+        .next()
+        .map(|mol| mol.center_of_geometry())
+        .unwrap_or_default()
+        .map(|x| x as f32);
+    let arcball_camera = PanOrbitCamera {
+        focus: center.into(),
+        allow_upside_down: true,
+        enabled: true,
+        ..default()
+    };
+
+    // mouse: zoom, rotate and translate
+    commands
+        .spawn(Camera3dBundle {
+            // projection: Projection::Orthographic(OrthographicProjection {
+            //     near: -500.0,
+            //     far: 500.0,
+            //     ..default()
+            // }),
+            ..default()
+        })
+        .insert(arcball_camera)
+        .insert(RaycastPickCamera::default());
+
+    // create atoms and bonds
+    for (fi, mol) in traj.mols.iter().enumerate() {
+        // only show the first frame
+        let visible = fi == 0;
+        crate::base::spawn_molecule(mol, visible, fi, &mut commands, &mut meshes, &mut materials);
+    }
+
+    // clear selection
+    selected_atoms.0.clear();
+}
+// 1c6c0570 ends here
+
 // [[file:../bevy.note::8ec82258][8ec82258]]
 #[derive(Debug, Clone)]
 pub struct MoleculePlugin {
@@ -331,6 +331,7 @@ impl Plugin for MoleculePlugin {
         app.insert_resource(self.traj.clone())
             .insert_resource(CurrentFrame::default())
             .insert_resource(SelectedAtoms::default())
+            .add_plugin(crate::animation::AnimationPlugin)
             .add_startup_system(spawn_molecules)
             .add_system(update_light_with_camera)
             .add_system(keyboard_animation_control)

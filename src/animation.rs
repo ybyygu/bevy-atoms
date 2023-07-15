@@ -76,7 +76,7 @@ fn play_animation(
         // toggle visibility
         let ci = *current_frame % player.nframes;
         for (mut visibility, Frame(fi)) in visibility_query.iter_mut() {
-            if *fi == ci {
+            if *fi == dbg!(ci) {
                 *visibility = Visibility::Visible;
             } else {
                 *visibility = Visibility::Hidden;
@@ -91,7 +91,9 @@ pub struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app;
+        app.insert_resource(AnimationPlayer::new(1, 0.2))
+            .add_system(keyboard_animation_control)
+            .add_system(play_animation);
     }
 }
 // 84e75727 ends here
