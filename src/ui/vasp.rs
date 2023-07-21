@@ -64,6 +64,8 @@ struct Settings {
     nwrite: usize,
     lwave: bool,
     lcharg: bool,
+    // write POSCAR or not
+    write_poscar: bool,
 }
 
 impl Default for Settings {
@@ -97,6 +99,7 @@ impl Default for Settings {
             nwrite: 2,
             lwave: false,
             lcharg: false,
+            write_poscar: false,
         }
     }
 }
@@ -211,6 +214,9 @@ impl State {
                     ui.hyperlink_to("LCHARG", "https://www.vasp.at/wiki/index.php/LCHARG")
                         .on_hover_text("determines whether the charge densities");
                     ui.toggle_value(&mut self.settings.lcharg, "write CHGCAR/CHG");
+                    ui.end_row();
+                    ui.checkbox(&mut self.settings.write_poscar, "write POSCAR file")
+                        .on_hover_text("If checked, write POSCAR file based from current molecule geometry");
                 });
         });
         ui.separator();
