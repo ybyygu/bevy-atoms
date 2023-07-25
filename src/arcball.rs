@@ -3,7 +3,7 @@
 //! https://github.com/Plonq/bevy_panorbit_camera/issues/28
 // 0398b660 ends here
 
-// [[file:../bevy.note::*egui][egui:1]]
+// [[file:../bevy.note::65ef062c][65ef062c]]
 mod egui {
     use bevy::prelude::{DetectChangesMut, Query, ResMut, Resource};
 
@@ -31,7 +31,7 @@ mod egui {
         wants_focus.set_if_neq(new_res);
     }
 }
-// egui:1 ends here
+// 65ef062c ends here
 
 // [[file:../bevy.note::5da5b7ce][5da5b7ce]]
 use bevy::input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel};
@@ -203,7 +203,7 @@ impl Default for PanOrbitCamera {
             radius: 5.0,
             is_upside_down: false,
             allow_upside_down: false,
-            orbit_sensitivity: 1.0,
+            orbit_sensitivity: 4.0,
             orbit_smoothness: 0.8,
             pan_sensitivity: 1.0,
             zoom_sensitivity: 1.0,
@@ -357,41 +357,14 @@ fn pan_orbit_camera(
 
     for (entity, mut pan_orbit, mut transform, mut projection) in orbit_cameras.iter_mut() {
         if !pan_orbit.initialized {
-            if let Some(upper_alpha) = pan_orbit.alpha_upper_limit {
-                if pan_orbit.alpha > upper_alpha {
-                    pan_orbit.alpha = upper_alpha;
-                }
-            }
-            if let Some(lower_alpha) = pan_orbit.alpha_lower_limit {
-                if pan_orbit.alpha < lower_alpha {
-                    pan_orbit.alpha = lower_alpha;
-                }
-            }
-            if let Some(upper_beta) = pan_orbit.beta_upper_limit {
-                if pan_orbit.beta > upper_beta {
-                    pan_orbit.beta = upper_beta;
-                }
-            }
-            if let Some(lower_beta) = pan_orbit.beta_lower_limit {
-                if pan_orbit.beta < lower_beta {
-                    pan_orbit.beta = lower_beta;
-                }
-            }
-
-            if let Projection::Orthographic(ref mut p) = *projection {
-                p.scale = pan_orbit.radius;
-            }
-
-            update_orbit_transform(pan_orbit.alpha, pan_orbit.beta, &pan_orbit, &mut transform);
-            pan_orbit.target_alpha = pan_orbit.alpha;
-            pan_orbit.target_beta = pan_orbit.beta;
-
+            update_orbit_pan(pan_orbit.alpha, -pan_orbit.beta, &pan_orbit, &mut transform);
+            pan_orbit.alpha = 0.0;
+            pan_orbit.beta = 0.0;
             pan_orbit.initialized = true;
             continue;
         }
 
         // 1 - Get Input
-
         let mut pan = Vec2::ZERO;
         let mut rotation_move = Vec2::ZERO;
         let mut scroll = 0.0;
@@ -466,6 +439,7 @@ fn pan_orbit_camera(
                         pan *= Vec2::new(p.area.width(), p.area.height()) / vp_size;
                     }
                 }
+
                 // Translate by local axes
                 let right = transform.rotation * Vec3::X * -pan.x;
                 let up = transform.rotation * Vec3::Y * pan.y;
@@ -484,35 +458,6 @@ fn pan_orbit_camera(
         }
 
         // 3 - Apply rotation constraints
-
-        if let Some(upper_alpha) = pan_orbit.alpha_upper_limit {
-            if pan_orbit.target_alpha > upper_alpha {
-                pan_orbit.target_alpha = upper_alpha;
-            }
-        }
-        if let Some(lower_alpha) = pan_orbit.alpha_lower_limit {
-            if pan_orbit.target_alpha < lower_alpha {
-                pan_orbit.target_alpha = lower_alpha;
-            }
-        }
-        if let Some(upper_beta) = pan_orbit.beta_upper_limit {
-            if pan_orbit.target_beta > upper_beta {
-                pan_orbit.target_beta = upper_beta;
-            }
-        }
-        if let Some(lower_beta) = pan_orbit.beta_lower_limit {
-            if pan_orbit.target_beta < lower_beta {
-                pan_orbit.target_beta = lower_beta;
-            }
-        }
-        if !pan_orbit.allow_upside_down {
-            if pan_orbit.target_beta < -PI / 2.0 {
-                pan_orbit.target_beta = -PI / 2.0;
-            }
-            if pan_orbit.target_beta > PI / 2.0 {
-                pan_orbit.target_beta = PI / 2.0;
-            }
-        }
 
         // 4 - Apply orbit rotation based on target alpha/beta
 
@@ -534,11 +479,10 @@ fn pan_orbit_camera(
                 target_beta = pan_orbit.target_beta;
             }
 
-            update_orbit_transform(target_alpha, target_beta, &pan_orbit, &mut transform);
+            pan_orbit.target_alpha = 0.0;
+            pan_orbit.target_beta = 0.0;
 
-            // Update current alpha and beta values
-            pan_orbit.alpha = target_alpha;
-            pan_orbit.beta = target_beta;
+            update_orbit_transform(target_alpha, target_beta, &pan_orbit, &mut transform);
 
             if pan_orbit.force_update {
                 pan_orbit.force_update = false;
@@ -595,8 +539,15 @@ fn update_orbit_transform(alpha: f32, beta: f32, pan_orbit: &PanOrbitCamera, tra
     let mut rotation = Quat::from_rotation_y(alpha);
     rotation *= Quat::from_rotation_x(-beta);
 
-    transform.rotation *= rotation;
+    transform.rotation = transform.rotation * rotation;
 
+    // Update the translation of the camera so we are always rotating 'around'
+    // (orbiting) rather than rotating in place
+    let rot_matrix = Mat3::from_quat(transform.rotation);
+    transform.translation = pan_orbit.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
+}
+
+fn update_orbit_pan(alpha: f32, beta: f32, pan_orbit: &PanOrbitCamera, transform: &mut Transform) {
     // Update the translation of the camera so we are always rotating 'around'
     // (orbiting) rather than rotating in place
     let rot_matrix = Mat3::from_quat(transform.rotation);
