@@ -7,8 +7,12 @@
 ! AUTOSTART
 
 # for nodes in queue "dft"
-%pal nprocs 36 end
+%pal nprocs 72 end
 %maxcore 5000
+
+#!moread
+#%moinp "old.gbw"
+
 
 # for resolving scf convergence problems
 ! KDIIS SOSCF
